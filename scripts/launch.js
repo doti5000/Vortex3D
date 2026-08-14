@@ -9,7 +9,6 @@ const projectRoot = path.join(__dirname, '..');
 const storageDir = path.join(projectRoot, '.storage');
 const tunnelSessionFile = path.join(storageDir, 'tunnel-session.json');
 
-// Ensure local storage directory exists
 if (!fs.existsSync(storageDir)) {
   fs.mkdirSync(storageDir, { recursive: true });
 }
@@ -19,26 +18,22 @@ console.log('🚀 Vortex3D Master Launcher & Deployment Pipeline');
 console.log('----------------------------------------------------');
 
 // 1. Sync & Deploy to GitHub (https://github.com/doti5000/Vortex3D.git) for Vercel
+console.log('📦 Step 1: Staging & committing codebase for GitHub deployment...');
 try {
-  console.log('📦 Step 1: Syncing codebase & pushing to GitHub (doti5000/Vortex3D)...');
-  execSync('git add .', { cwd: projectRoot, stdio: 'inherit' });
+  execSync('git add .', { cwd: projectRoot, stdio: 'ignore' });
   try {
-    execSync('git commit -m "Auto-deploy update: UserID auth & Cloudflare tunnel integration"', { cwd: projectRoot, stdio: 'pipe' });
-  } catch (e) {
-    console.log('   (No uncommitted changes to commit)');
-  }
+    execSync('git commit -m "Auto-deploy update: UserID auth & Cloudflare tunnel integration"', { cwd: projectRoot, stdio: 'ignore' });
+  } catch (e) {}
   
-  // Set main branch and push
-  execSync('git branch -M main', { cwd: projectRoot, stdio: 'inherit' });
-  try {
-    execSync('git push -u origin main', { cwd: projectRoot, stdio: 'inherit' });
-    console.log('✅ Successfully pushed to GitHub (doti5000/Vortex3D). Vercel deployment triggered!');
-  } catch (pushErr) {
-    console.warn('⚠️ Note: Could not push to GitHub (check internet connection or auth credentials). Local server continuing...');
-  }
+  execSync('git branch -M main', { cwd: projectRoot, stdio: 'ignore' });
+  console.log('✅ Codebase committed to local git branch "main". Linked remote: https://github.com/doti5000/Vortex3D.git');
 } catch (err) {
-  console.warn('⚠️ Git sync step encountered an issue:', err.message);
+  console.warn('⚠️ Git commit step warning:', err.message);
 }
+
+// Attempt non-blocking async push to GitHub for Vercel
+const pushProcess = spawn('git', ['push', '-u', 'origin', 'main'], { cwd: projectRoot, stdio: 'ignore' });
+pushProcess.on('error', () => {});
 
 // 2. Start Backend Server with PostgreSQL / Local Disk Storage
 console.log('\n🗄️ Step 2: Starting Node.js Express & WebSocket Backend Server (Port 3001)...');
