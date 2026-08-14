@@ -20,7 +20,7 @@ export function createAuthModal({ onAuthSuccess }) {
           <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
             <span>🔐</span> VORTEX3D ACCOUNT AUTHENTICATION
           </h3>
-          <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">Phryco LLC Enterprise Single Sign-On</span>
+          <span style="font-size: 11px; color: #94a3b8; font-weight: 600;">Server-Verified Zero-Trust Authentication</span>
         </div>
         <button class="btn-close" id="btn-close-auth" style="background: none; border: none; color: #94a3b8; font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 4px;">✕</button>
       </div>
@@ -79,42 +79,11 @@ export function createAuthModal({ onAuthSuccess }) {
     modal.querySelector('#tab-login').addEventListener('click', () => { activeTab = 'login'; render(); });
     modal.querySelector('#tab-register').addEventListener('click', () => { activeTab = 'register'; render(); });
 
-    // Phryco SSO Button Handler with Window Popup & API Fallback
+    // Phryco SSO Button Handler - Strictly Backend Verified
     modal.querySelector('#btn-phryco-sso').addEventListener('click', async () => {
-      const authUrl = `${PHRYCO_SSO_WORKER_URL}?client_id=${encodeURIComponent(PHRYCO_CLIENT_ID)}&response_type=code&redirect_uri=${encodeURIComponent(window.location.origin)}`;
-      
-      const width = 600, height = 700;
-      const left = (window.screen.width - width) / 2;
-      const top = (window.screen.height - height) / 2;
-      
-      const popup = window.open(authUrl, 'PhrycoSSO', `width=${width},height=${height},top=${top},left=${left}`);
+      const errBox = modal.querySelector('#auth-error-msg');
+      errBox.style.display = 'none';
 
-      // Handle PostMessage callback from worker window or API authorization
-      const messageHandler = async (event) => {
-        if (event.data && event.data.type === 'PHRYCO_SSO_AUTH') {
-          window.removeEventListener('message', messageHandler);
-          if (popup && !popup.closed) popup.close();
-
-          const phrycoUser = {
-            id: event.data.userId || 'usr_phryco_' + Math.random().toString(36).substring(2, 8),
-            username: event.data.username || 'PhrycoMember',
-            email: event.data.email || 'member@phryco.com',
-            provider: 'Phryco LLC SSO',
-            clientId: PHRYCO_CLIENT_ID
-          };
-
-          localStorage.setItem('vortex3d_token', event.data.token || 'tok_phryco_sso');
-          localStorage.setItem('vortex3d_user', JSON.stringify(phrycoUser));
-
-          if (onAuthSuccess) onAuthSuccess(phrycoUser);
-          backdrop.remove();
-          alert(`🎉 Successfully Signed in with Phryco Account!\n\nUser: ${phrycoUser.username}\nProvider: ${phrycoUser.provider}\nClient ID: ${PHRYCO_CLIENT_ID}`);
-        }
-      };
-
-      window.addEventListener('message', messageHandler);
-
-      // Fallback API verification if popup is blocked or closed
       try {
         const baseUrl = getApiBaseUrl();
         const res = await fetch(`${baseUrl}/api/auth/sso`, {
@@ -122,15 +91,25 @@ export function createAuthModal({ onAuthSuccess }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ clientId: PHRYCO_CLIENT_ID, ssoWorkerUrl: PHRYCO_SSO_WORKER_URL })
         });
+
         const data = await res.json();
-        if (data.success && !localStorage.getItem('vortex3d_token')) {
-          localStorage.setItem('vortex3d_token', data.token);
-          localStorage.setItem('vortex3d_user', JSON.stringify(data.user));
-          if (onAuthSuccess) onAuthSuccess(data.user);
-          backdrop.remove();
-          alert(`🎉 Successfully Authenticated with Phryco Account!\n\nUser: ${data.user.username}\nProvider: ${data.user.provider}`);
+        if (!res.ok || data.error) {
+          errBox.textContent = data.error || 'Server rejected Phryco SSO authorization.';
+          errBox.style.display = 'block';
+          return;
         }
-      } catch (err) {}
+
+        // Store server-issued token and authenticated user profile
+        localStorage.setItem('vortex3d_token', data.token);
+        localStorage.setItem('vortex3d_user', JSON.stringify(data.user));
+
+        if (onAuthSuccess) onAuthSuccess(data.user);
+        backdrop.remove();
+        alert(`🎉 Server Verified Phryco SSO Account!\n\nUser: ${data.user.username}\nProvider: ${data.user.provider}`);
+      } catch (err) {
+        errBox.textContent = 'Failed to connect to authentication server. Client-side fallback is disabled for security.';
+        errBox.style.display = 'block';
+      }
     });
 
     const form = modal.querySelector('#auth-form');
@@ -161,26 +140,16 @@ export function createAuthModal({ onAuthSuccess }) {
           return;
         }
 
+        // Store server-issued token and authenticated user profile
         localStorage.setItem('vortex3d_token', data.token);
         localStorage.setItem('vortex3d_user', JSON.stringify(data.user));
 
         if (onAuthSuccess) onAuthSuccess(data.user);
         backdrop.remove();
-        alert(`🎉 Welcome ${data.user.username}! Account authenticated successfully.`);
+        alert(`🎉 Welcome ${data.user.username}! Server authenticated successfully.`);
       } catch (err) {
-        const fallbackUser = {
-          id: 'usr_' + Math.random().toString(36).substring(2, 9),
-          username: username,
-          email: email || `${username}@phryco.com`
-        };
-        const fallbackToken = 'tok_offline_' + Math.random().toString(36).substring(2, 10);
-
-        localStorage.setItem('vortex3d_token', fallbackToken);
-        localStorage.setItem('vortex3d_user', JSON.stringify(fallbackUser));
-
-        if (onAuthSuccess) onAuthSuccess(fallbackUser);
-        backdrop.remove();
-        alert(`🎉 Welcome ${fallbackUser.username}! Account active in offline local mode.`);
+        errBox.textContent = 'Backend authentication server connection error. Client-side fallbacks are disabled for security.';
+        errBox.style.display = 'block';
       }
     });
   }
