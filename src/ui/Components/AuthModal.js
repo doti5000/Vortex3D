@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from '../../network/api.js';
+
 export function createAuthModal({ onAuthSuccess }) {
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
@@ -66,7 +68,8 @@ export function createAuthModal({ onAuthSuccess }) {
       const payload = activeTab === 'register' ? { username, email, password } : { username, password };
 
       try {
-        const response = await fetch(`http://localhost:3001${endpoint}`, {
+        const baseUrl = getApiBaseUrl();
+        const response = await fetch(`${baseUrl}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -87,7 +90,7 @@ export function createAuthModal({ onAuthSuccess }) {
         backdrop.remove();
         alert(`🎉 Welcome ${data.user.username}! Account active on PostgreSQL / Local Storage.`);
       } catch (err) {
-        errBox.textContent = 'Backend server connection error. Make sure server is running on port 3001.';
+        errBox.textContent = 'Backend server connection error. Make sure server is running.';
         errBox.style.display = 'block';
       }
     });

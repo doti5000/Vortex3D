@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from '../../network/api.js';
+
 export class GamesPortal {
   constructor({ onJoinGame, onOpenPublisher }) {
     this.onJoinGame = onJoinGame;
@@ -17,7 +19,8 @@ export class GamesPortal {
   async fetchRealGames() {
     try {
       this.isLoading = true;
-      const res = await fetch('http://localhost:3001/api/games');
+      const baseUrl = getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/api/games`);
       if (res.ok) {
         this.publishedGames = await res.json();
       }
@@ -31,7 +34,8 @@ export class GamesPortal {
 
   async addPublishedGame(gameData) {
     try {
-      const res = await fetch('http://localhost:3001/api/games/publish', {
+      const baseUrl = getApiBaseUrl();
+      const res = await fetch(`${baseUrl}/api/games/publish`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(gameData)

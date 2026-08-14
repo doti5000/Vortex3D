@@ -9,6 +9,7 @@ import { AudioManager } from './engine/AudioManager.js';
 import { ParticleSystem } from './engine/ParticleSystem.js';
 import { VehicleController } from './engine/VehicleController.js';
 import { MultiplayerClient } from './network/MultiplayerClient.js';
+import { getApiBaseUrl } from './network/api.js';
 
 import { createHeader } from './ui/Components/Header.js';
 import { createViewport } from './ui/Components/Viewport.js';
@@ -223,7 +224,8 @@ class StudioApp {
 
         let tunnelUrl = 'https://vortex3d-live.trycloudflare.com';
         try {
-          const tunnelRes = await fetch('http://localhost:3001/api/tunnel/session');
+          const baseUrl = getApiBaseUrl();
+          const tunnelRes = await fetch(`${baseUrl}/api/tunnel/session`);
           if (tunnelRes.ok) {
             const tData = await tunnelRes.json();
             if (tData.tunnelUrl) tunnelUrl = tData.tunnelUrl;
