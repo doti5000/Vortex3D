@@ -7,7 +7,7 @@
     "dev": "vite",
     "launch": "node scripts/launch.js",
     "server": "node server/index.js",
-    "build:wasm": "asc src/physics/wasm/assembly/index.ts --target release --outFile public/physics.wasm",
+    "build:wasm": "asc src/physics/wasm/assembly/index.ts --enable simd --target release --outFile public/physics.wasm",
     "build": "npm run build:wasm && vite build",
     "preview": "vite preview"
   },

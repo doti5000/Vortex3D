@@ -93,7 +93,7 @@ export function createHeader({ onPlay, onPause, onStep, getIsPlaying, onBackendC
       </select>
 
       <select id="backend-select" class="select-input" title="Switch WASM Physics Engine Backend">
-        <option value="custom" ${activeBackend === 'custom' ? 'selected' : ''}>⚡ Custom WASM</option>
+        <option value="custom" ${activeBackend === 'custom' ? 'selected' : ''}>⚡ VortexWASM</option>
         <option value="rapier" ${activeBackend === 'rapier' ? 'selected' : ''}>⚡ Rapier3D</option>
       </select>
 

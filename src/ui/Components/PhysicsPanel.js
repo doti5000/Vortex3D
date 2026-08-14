@@ -6,7 +6,7 @@ export function createPhysicsPanel({ physicsManager }) {
     <div style="display: flex; gap: 20px; align-items: center;">
       <div class="telemetry-stat">
         <span>ENGINE:</span>
-        <span id="tel-backend" class="telemetry-value" style="color: #8b5cf6;">CUSTOM WASM</span>
+        <span id="tel-backend" class="telemetry-value" style="color: #8b5cf6;">VORTEXWASM</span>
       </div>
       <div class="telemetry-stat">
         <span>WASM STEP TIME:</span>
@@ -28,7 +28,7 @@ export function createPhysicsPanel({ physicsManager }) {
   let lastFpsTime = performance.now();
 
   physicsManager.onTelemetry((data) => {
-    bar.querySelector('#tel-backend').textContent = data.backend.toUpperCase() === 'CUSTOM' ? 'CUSTOM WASM (AS)' : 'RAPIER3D WASM';
+    bar.querySelector('#tel-backend').textContent = data.backend.toUpperCase() === 'CUSTOM' ? 'VORTEXWASM (AS SIMD128)' : 'RAPIER3D WASM';
     bar.querySelector('#tel-steptime').textContent = `${data.stepTimeMs.toFixed(2)} ms`;
     bar.querySelector('#tel-bodies').textContent = data.bodyCount;
   });

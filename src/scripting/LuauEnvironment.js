@@ -76,12 +76,34 @@ export class SignalJS {
   Connect(callback) {
     this.listeners.add(callback);
     return {
+      Connected: true,
       Disconnect: () => this.listeners.delete(callback)
     };
   }
 
+  Once(callback) {
+    const wrapper = (...args) => {
+      this.listeners.delete(wrapper);
+      callback(...args);
+    };
+    this.listeners.add(wrapper);
+    return {
+      Connected: true,
+      Disconnect: () => this.listeners.delete(wrapper)
+    };
+  }
+
+  Wait() {
+    return new Promise(resolve => {
+      const conn = this.Connect((...args) => {
+        conn.Disconnect();
+        resolve(args.length === 1 ? args[0] : args);
+      });
+    });
+  }
+
   Fire(...args) {
-    for (const listener of this.listeners) {
+    for (const listener of Array.from(this.listeners)) {
       try {
         listener(...args);
       } catch (err) {

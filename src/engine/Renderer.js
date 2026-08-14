@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 
 export class Renderer {
   constructor(containerElement) {
@@ -16,6 +20,7 @@ export class Renderer {
     this.webglRenderer.shadowMap.enabled = true;
     this.webglRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.webglRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.webglRenderer.toneMappingExposure = 1.1;
 
     containerElement.appendChild(this.webglRenderer.domElement);
 
@@ -29,6 +34,7 @@ export class Renderer {
 
     this.setupLighting();
     this.setupGrid();
+    this.setupPostProcessing();
 
     window.addEventListener('resize', () => this.onResize());
   }
@@ -50,6 +56,7 @@ export class Renderer {
     sun.shadow.camera.right = 30;
     sun.shadow.camera.top = 30;
     sun.shadow.camera.bottom = -30;
+    sun.shadow.bias = -0.0005;
     this.scene.add(sun);
 
     // Hemisphere Light
@@ -63,12 +70,32 @@ export class Renderer {
     this.scene.add(grid);
   }
 
+  setupPostProcessing() {
+    const width = this.container.clientWidth;
+    const height = this.container.clientHeight;
+
+    this.composer = new EffectComposer(this.webglRenderer);
+    const renderPass = new RenderPass(this.scene, this.camera);
+    this.composer.addPass(renderPass);
+
+    // Subtle Unreal Bloom for Glowing WASM VFX & Neon Lights
+    const bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(width, height),
+      0.35, // strength
+      0.4,  // radius
+      0.85  // threshold
+    );
+    this.composer.addPass(bloomPass);
+
+    const outputPass = new OutputPass();
+    this.composer.addPass(outputPass);
+  }
+
   followAvatar(avatarPosition) {
     if (!avatarPosition) return;
     const targetVec = new THREE.Vector3(avatarPosition.x, avatarPosition.y + 1.5, avatarPosition.z);
     this.controls.target.lerp(targetVec, 0.1);
 
-    // Move camera smoothly behind avatar
     const desiredCamPos = new THREE.Vector3(
       avatarPosition.x,
       avatarPosition.y + 6.0,
@@ -98,10 +125,9 @@ export class Renderer {
     }
 
     const material = new THREE.MeshStandardMaterial({
-      color: entity.meshRenderer.color || 0x4f46e5,
+      color: entity.meshRenderer.color || '#3b82f6',
       roughness: entity.meshRenderer.roughness !== undefined ? entity.meshRenderer.roughness : 0.4,
-      metalness: entity.meshRenderer.metalness !== undefined ? entity.meshRenderer.metalness : 0.1,
-      wireframe: !!entity.meshRenderer.wireframe
+      metalness: entity.meshRenderer.metalness !== undefined ? entity.meshRenderer.metalness : 0.1
     });
 
     if (!mesh) {
@@ -117,24 +143,17 @@ export class Renderer {
       mesh.material = material;
     }
 
-    // Update Transform
     mesh.position.set(...entity.transform.position);
-    mesh.rotation.set(
-      THREE.MathUtils.degToRad(entity.transform.rotation[0]),
-      THREE.MathUtils.degToRad(entity.transform.rotation[1]),
-      THREE.MathUtils.degToRad(entity.transform.rotation[2])
-    );
+    mesh.rotation.set(...entity.transform.rotation);
     mesh.scale.set(...entity.transform.scale);
-
-    entity.threeMesh = mesh;
   }
 
   removeEntityMesh(entityId) {
     if (this.meshMap.has(entityId)) {
       const mesh = this.meshMap.get(entityId);
       this.scene.remove(mesh);
-      mesh.geometry.dispose();
-      mesh.material.dispose();
+      if (mesh.geometry) mesh.geometry.dispose();
+      if (mesh.material) mesh.material.dispose();
       this.meshMap.delete(entityId);
     }
   }
@@ -151,7 +170,11 @@ export class Renderer {
 
   render() {
     this.controls.update();
-    this.webglRenderer.render(this.scene, this.camera);
+    if (this.composer) {
+      this.composer.render();
+    } else {
+      this.webglRenderer.render(this.scene, this.camera);
+    }
   }
 
   onResize() {
@@ -161,5 +184,8 @@ export class Renderer {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.webglRenderer.setSize(width, height);
+    if (this.composer) {
+      this.composer.setSize(width, height);
+    }
   }
 }
