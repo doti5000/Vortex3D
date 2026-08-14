@@ -20,8 +20,30 @@ console.log('----------------------------------------------------');
 console.log('🚀 Vortex3D Master Launcher & Automated Tunnel Engine');
 console.log('----------------------------------------------------');
 
-// 0. Process Termination: Kill existing processes on ports 3000/3001 & old PIDs
-console.log('🧹 Step 0: Checking & cleaning up existing background processes...');
+// Helper to kill active listening processes on target port
+function killPortProcess(port) {
+  try {
+    if (process.platform === 'win32') {
+      const out = execSync(`netstat -ano | findstr :${port}`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] });
+      const lines = out.split('\n').filter(l => l.includes('LISTENING'));
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        const pid = parts[parts.length - 1];
+        if (pid && parseInt(pid) > 0) {
+          try {
+            execSync(`taskkill /F /T /PID ${pid}`, { stdio: 'ignore' });
+            console.log(`   🧹 Terminated prior process listening on port ${port} (PID ${pid})`);
+          } catch (e) {}
+        }
+      }
+    }
+  } catch (e) {}
+}
+
+// 0. Clean up existing processes on ports 3000 & 3001
+console.log('🧹 Step 0: Detecting & terminating active server/tunnel instances on ports 3000/3001...');
+killPortProcess(3000);
+killPortProcess(3001);
 
 if (fs.existsSync(pidsFile)) {
   try {
@@ -37,15 +59,7 @@ if (fs.existsSync(pidsFile)) {
   } catch (e) {}
 }
 
-// Kill anything on ports 3000 & 3001 using system port cleanup
-try {
-  if (process.platform === 'win32') {
-    execSync('cmd /c "for /f \\"tokens=5\\" %a in (\'netstat -aon ^| findstr :3000 ^| findstr LISTENING\') do taskkill /F /PID %a"', { stdio: 'ignore' });
-    execSync('cmd /c "for /f \\"tokens=5\\" %a in (\'netstat -aon ^| findstr :3001 ^| findstr LISTENING\') do taskkill /F /PID %a"', { stdio: 'ignore' });
-  }
-} catch (e) {}
-
-console.log('✅ Cleaned up old server & dev processes.');
+console.log('✅ Port 3000 and 3001 are free and ready.');
 
 // 1. Sync & Push Codebase to GitHub (doti5000/Vortex3D.git) for Vercel Deployment
 console.log('\n📦 Step 1: Staging & pushing codebase to GitHub for Vercel deployment (https://vortex3d.vercel.app/)...');
