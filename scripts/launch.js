@@ -69,7 +69,7 @@ console.log('\n📦 Step 1: Staging & pushing codebase to GitHub for Vercel depl
 try {
   execSync('git add .', { cwd: projectRoot, stdio: 'ignore' });
   try {
-    execSync('git commit -m "Link Phryco start.ps1 dynamic tunnel syncing across Vortex3D ecosystem"', { cwd: projectRoot, stdio: 'ignore' });
+    execSync('git commit -m "Expose Vite dev server on all network interfaces (0.0.0.0:3000)"', { cwd: projectRoot, stdio: 'ignore' });
   } catch (e) {}
   
   execSync('git branch -M main', { cwd: projectRoot, stdio: 'ignore' });
@@ -91,7 +91,6 @@ const serverProcess = spawn('node', ['server/index.js'], { cwd: projectRoot, std
 console.log('\n🌐 Step 3: Synchronizing Cloudflare Tunnel Network URL...');
 let tunnelUrl = null;
 
-// Check if Phryco start.ps1 has already generated a live Cloudflare Tunnel URL in G:\phryco\cf.log
 if (fs.existsSync(PHRYCO_CF_LOG)) {
   try {
     const phrycoLogContent = fs.readFileSync(PHRYCO_CF_LOG, 'utf8');
@@ -153,12 +152,10 @@ function updateAllProjectFiles(url) {
     tunnelPid: tunnelProcess ? tunnelProcess.pid : null
   }, null, 2));
 
-  // Update Phryco cf.log if present
   try {
     fs.writeFileSync(PHRYCO_CF_LOG, `[Vortex3D-Linked] Active Cloudflare Tunnel: ${url}\nDate: ${new Date().toISOString()}`);
   } catch (e) {}
 
-  // Update linked configuration files across both projects
   const filesToSync = [
     path.join(PHRYCO_ROOT, 'example_sso_client', 'index.html'),
     path.join(PHRYCO_ROOT, 'frontend', 'js', 'utils', 'config.js'),
@@ -183,9 +180,9 @@ function updateAllProjectFiles(url) {
 
 updateAllProjectFiles(tunnelUrl);
 
-// 4. Launch Vite WebGL Dev Server
-console.log('\n⚡ Step 4: Launching Vite Dev Server (http://localhost:3000/)...');
-const viteProcess = spawn('npx', ['vite'], { cwd: projectRoot, stdio: 'inherit', shell: true });
+// 4. Launch Vite WebGL Dev Server (Exposed on 0.0.0.0:3000)
+console.log('\n⚡ Step 4: Launching Network-Exposed Vite Dev Server (http://0.0.0.0:3000/)...');
+const viteProcess = spawn('npx', ['vite', '--host', '0.0.0.0'], { cwd: projectRoot, stdio: 'inherit', shell: true });
 
 setTimeout(() => {
   fs.writeFileSync(pidsFile, JSON.stringify({
