@@ -1,0 +1,20 @@
+{
+  "targets": {
+    "release": {
+      "outFile": "public/physics.wasm",
+      "optimizeLevel": 3,
+      "shrinkLevel": 0,
+      "noAssert": false,
+      "exportRuntime": true,
+      "allocator": "tlsf"
+    },
+    "debug": {
+      "outFile": "public/physics.debug.wasm",
+      "debug": true,
+      "exportRuntime": true
+    }
+  },
+  "options": {
+    "bindings": "esm"
+  }
+}

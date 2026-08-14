@@ -1,0 +1,6 @@
+node_modules
+dist
+.storage
+public/physics.wasm
+*.log
+.DS_Store

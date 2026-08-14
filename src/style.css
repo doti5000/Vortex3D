@@ -1,0 +1,681 @@
+/* Master Design System & Zero Off-Screen UI Layout - Vortex3D Studio */
+
+:root {
+  --bg-primary: #090d16;
+  --bg-surface: #111827;
+  --bg-surface-elevated: #1f2937;
+  --bg-glass: rgba(17, 24, 39, 0.9);
+
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color-active: rgba(99, 102, 241, 0.5);
+
+  --text-main: #f9fafb;
+  --text-muted: #9ca3af;
+  --text-dim: #6b7280;
+
+  --accent: #6366f1;
+  --accent-hover: #4f46e5;
+  --accent-glow: rgba(99, 102, 241, 0.35);
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Fira Code', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-primary);
+  color: var(--text-main);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  user-select: none;
+  scrollbar-gutter: stable;
+}
+
+/* Zero-CLS Main Container */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  max-width: 100vw;
+  max-height: 100vh;
+  overflow: hidden;
+  contain: layout size;
+}
+
+/* Responsive Studio Top Header (Zero Off-Screen Overflow Guaranteed) */
+.studio-header {
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  gap: 8px;
+  z-index: 100;
+  contain: layout size;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.studio-header::-webkit-scrollbar {
+  display: none;
+}
+
+.header-left, .header-center, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.header-left {
+  flex-shrink: 0;
+}
+
+.header-center {
+  flex-shrink: 0;
+}
+
+.header-right {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.brand-badge {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: white;
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.nav-mode-toggle {
+  display: flex;
+  background: var(--bg-primary);
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.nav-mode-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.nav-mode-btn.active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+.btn {
+  background: var(--bg-surface-elevated);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+.btn-success {
+  background: var(--success);
+  border-color: var(--success);
+  color: white;
+}
+
+.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: white;
+}
+
+.select-input {
+  background: var(--bg-surface-elevated);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+  padding: 4px 6px;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  outline: none;
+  cursor: pointer;
+  max-width: 125px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Studio Workspace Grid */
+.studio-workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100vw;
+  contain: layout size;
+}
+
+/* Sidebar Panels */
+.panel {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  contain: layout size;
+  overflow: hidden;
+}
+
+.panel-header {
+  height: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px;
+  scrollbar-gutter: stable;
+  max-width: 100%;
+}
+
+.panel-hierarchy {
+  width: 200px;
+  min-width: 160px;
+  max-width: 220px;
+}
+
+.entity-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.entity-item {
+  height: 30px;
+  min-height: 30px;
+  padding: 0 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.12s ease;
+  overflow: hidden;
+}
+
+.entity-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.entity-item.selected {
+  background: var(--accent-glow);
+  border: 1px solid var(--accent);
+  color: white;
+}
+
+/* Center Viewport Container */
+.viewport-container {
+  flex: 1;
+  position: relative;
+  background: #000;
+  contain: layout size;
+  overflow: hidden;
+  min-width: 280px;
+}
+
+.viewport-toolbar {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  display: flex;
+  gap: 4px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.gizmo-btn {
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+}
+
+.gizmo-btn:hover, .gizmo-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* Right Panel (Inspector & Luau Code Editor) */
+.panel-right {
+  width: 310px;
+  min-width: 260px;
+  max-width: 340px;
+  border-left: 1px solid var(--border-color);
+  border-right: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.tab-header {
+  height: 36px;
+  min-height: 36px;
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-surface);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 6px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.tab-btn.active {
+  color: white;
+  border-bottom-color: var(--accent);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Form Groups for Inspector */
+.form-section {
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 8px;
+  max-width: 100%;
+}
+
+.form-section-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  max-width: 100%;
+}
+
+.form-row label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.form-row input, .form-row select {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: white;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  max-width: 100%;
+}
+
+.vec3-inputs {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.vec3-inputs input {
+  width: 33.33%;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 3px 2px;
+  text-align: center;
+}
+
+/* Luau Code Editor */
+.luau-code-area {
+  width: 100%;
+  max-width: 100%;
+  height: 220px;
+  min-height: 180px;
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  outline: none;
+  resize: vertical;
+  line-height: 1.4;
+}
+
+.console-output {
+  height: 110px;
+  min-height: 90px;
+  background: #05070a;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  overflow-y: auto;
+  margin-top: 6px;
+  scrollbar-gutter: stable;
+}
+
+.log-entry {
+  margin-bottom: 2px;
+}
+.log-info { color: #60a5fa; }
+.log-warn { color: #f59e0b; }
+.log-error { color: #f87171; }
+
+/* Bottom Telemetry Bar */
+.telemetry-bar {
+  height: 32px;
+  min-height: 32px;
+  max-height: 32px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  contain: layout size;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.telemetry-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.telemetry-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.telemetry-value {
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   PUBLISHED GAMES PORTAL PAGE
+   ========================================================================== */
+
+.games-portal {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+  background: radial-gradient(circle at top, #1e1b4b 0%, #090d16 60%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.portal-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.portal-hero h1 {
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #ffffff, #a5b4fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.portal-hero p {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  max-width: 600px;
+}
+
+.portal-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 180px;
+  max-width: 360px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  outline: none;
+}
+
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.game-card {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  backdrop-filter: blur(12px);
+}
+
+.game-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  box-shadow: 0 10px 24px rgba(99, 102, 241, 0.25);
+}
+
+.game-card-banner {
+  height: 130px;
+  background: linear-gradient(135deg, #312e81, #4338ca);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 2.3rem;
+}
+
+.game-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  padding: 3px 8px;
+  border-radius: 16px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--success);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.game-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 6px var(--success);
+}
+
+.game-card-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.game-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.game-card-desc {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  flex: 1;
+}
+
+.game-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Responsive Modal Overlay (Prevent Off-Screen Clipping) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-card {
+  width: 420px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.6);
+}
+
+.modal-header {
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
