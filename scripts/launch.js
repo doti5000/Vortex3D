@@ -18,22 +18,23 @@ console.log('🚀 Vortex3D Master Launcher & Deployment Pipeline');
 console.log('----------------------------------------------------');
 
 // 1. Sync & Deploy to GitHub (https://github.com/doti5000/Vortex3D.git) for Vercel
-console.log('📦 Step 1: Staging & committing codebase for GitHub deployment...');
+console.log('📦 Step 1: Staging & pushing codebase to GitHub (doti5000/Vortex3D)...');
 try {
   execSync('git add .', { cwd: projectRoot, stdio: 'ignore' });
   try {
-    execSync('git commit -m "Auto-deploy update: UserID auth & Cloudflare tunnel integration"', { cwd: projectRoot, stdio: 'ignore' });
+    execSync('git commit -m "Auto-deploy update to Vortex3D"', { cwd: projectRoot, stdio: 'ignore' });
   } catch (e) {}
   
   execSync('git branch -M main', { cwd: projectRoot, stdio: 'ignore' });
-  console.log('✅ Codebase committed to local git branch "main". Linked remote: https://github.com/doti5000/Vortex3D.git');
+  try {
+    execSync('git push -u origin main', { cwd: projectRoot, stdio: 'inherit' });
+    console.log('✅ Successfully pushed to GitHub (doti5000/Vortex3D). Vercel deployment triggered!');
+  } catch (pushErr) {
+    console.warn('⚠️ Push warning (local server continuing):', pushErr.message);
+  }
 } catch (err) {
   console.warn('⚠️ Git commit step warning:', err.message);
 }
-
-// Attempt non-blocking async push to GitHub for Vercel
-const pushProcess = spawn('git', ['push', '-u', 'origin', 'main'], { cwd: projectRoot, stdio: 'ignore' });
-pushProcess.on('error', () => {});
 
 // 2. Start Backend Server with PostgreSQL / Local Disk Storage
 console.log('\n🗄️ Step 2: Starting Node.js Express & WebSocket Backend Server (Port 3001)...');
