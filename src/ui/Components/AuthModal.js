@@ -27,19 +27,19 @@ export function createAuthModal({ onAuthSuccess }) {
         <form id="auth-form">
           <div class="form-group" style="margin-bottom: 12px;">
             <label style="display: block; font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 4px;">USERNAME</label>
-            <input type="text" id="auth-username" placeholder="e.g. BuilderBob" required style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; font-size: 14px;" />
+            <input type="text" id="auth-username" name="username" autocomplete="username" placeholder="e.g. BuilderBob" required style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; font-size: 14px;" />
           </div>
 
           ${activeTab === 'register' ? `
             <div class="form-group" style="margin-bottom: 12px;">
               <label style="display: block; font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 4px;">EMAIL ADDRESS</label>
-              <input type="email" id="auth-email" placeholder="bob@vortex3d.com" required style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; font-size: 14px;" />
+              <input type="email" id="auth-email" name="email" autocomplete="email" placeholder="bob@vortex3d.com" required style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; font-size: 14px;" />
             </div>
           ` : ''}
 
           <div class="form-group" style="margin-bottom: 18px;">
             <label style="display: block; font-size: 12px; font-weight: 600; color: #94a3b8; margin-bottom: 4px;">PASSWORD</label>
-            <input type="password" id="auth-password" placeholder="••••••••" required style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; font-size: 14px;" />
+            <input type="password" id="auth-password" name="password" autocomplete="${activeTab === 'login' ? 'current-password' : 'new-password'}" placeholder="••••••••" required style="width: 100%; padding: 10px; background: #0f172a; border: 1px solid #334155; border-radius: 6px; color: white; font-size: 14px;" />
           </div>
 
           <button type="submit" id="btn-submit-auth" style="width: 100%; padding: 12px; font-weight: 700; font-size: 15px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 6px; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
