@@ -10,15 +10,17 @@ const storageDir = path.join(projectRoot, '.storage');
 const tunnelSessionFile = path.join(storageDir, 'tunnel-session.json');
 const pidsFile = path.join(storageDir, 'pids.json');
 
+const PHRYCO_ROOT = 'G:\\phryco';
+const PHRYCO_CLOUDFLARED_BIN = path.join(PHRYCO_ROOT, 'cloudflared.exe');
+const PHRYCO_CF_LOG = path.join(PHRYCO_ROOT, 'cf.log');
 const VERCEL_PRODUCTION_DOMAIN = 'https://vortex3d.vercel.app/';
-const PHRYCO_CLOUDFLARED_BIN = 'G:\\phryco\\cloudflared.exe';
 
 if (!fs.existsSync(storageDir)) {
   fs.mkdirSync(storageDir, { recursive: true });
 }
 
 console.log('----------------------------------------------------');
-console.log('🚀 Vortex3D Master Launcher & Phryco Enterprise Pipeline');
+console.log('🚀 Vortex3D & Phryco LLC Linked Master Launcher');
 console.log('----------------------------------------------------');
 
 // Helper to kill active listening processes on target port
@@ -42,7 +44,7 @@ function killPortProcess(port) {
 }
 
 // 0. Pre-flight Process Tree Cleanup
-console.log('🧹 Step 0: Pre-flight cleanup on ports 3000 & 3001...');
+console.log('🧹 Step 0: Pre-flight process cleanup on ports 3000 & 3001...');
 killPortProcess(3000);
 killPortProcess(3001);
 
@@ -67,7 +69,7 @@ console.log('\n📦 Step 1: Staging & pushing codebase to GitHub for Vercel depl
 try {
   execSync('git add .', { cwd: projectRoot, stdio: 'ignore' });
   try {
-    execSync('git commit -m "Integrate Phryco LLC SSO & Enterprise Platform Architecture"', { cwd: projectRoot, stdio: 'ignore' });
+    execSync('git commit -m "Link Phryco start.ps1 dynamic tunnel syncing across Vortex3D ecosystem"', { cwd: projectRoot, stdio: 'ignore' });
   } catch (e) {}
   
   execSync('git branch -M main', { cwd: projectRoot, stdio: 'ignore' });
@@ -85,63 +87,101 @@ try {
 console.log('\n🗄️ Step 2: Starting Node.js Express & WebSocket Backend Server (Port 3001)...');
 const serverProcess = spawn('node', ['server/index.js'], { cwd: projectRoot, stdio: 'inherit' });
 
-// 3. Automated Cloudflare Tunnel Setup (Preferring Native G:\phryco\cloudflared.exe)
-console.log('\n🌐 Step 3: Launching Cloudflare Tunnel Networking...');
-let tunnelUrl = `https://vortex3d-live-${Math.random().toString(36).substring(2, 7)}.trycloudflare.com`;
+// 3. Automated Cloudflare Tunnel Synchronization between Phryco & Vortex3D
+console.log('\n🌐 Step 3: Synchronizing Cloudflare Tunnel Network URL...');
+let tunnelUrl = null;
 
-const usePhrycoBin = fs.existsSync(PHRYCO_CLOUDFLARED_BIN);
-const tunnelCmd = usePhrycoBin ? PHRYCO_CLOUDFLARED_BIN : 'npx';
-const tunnelArgs = usePhrycoBin ? ['tunnel', '--url', 'http://localhost:3001'] : ['cloudflared', 'tunnel', '--url', 'http://localhost:3001'];
-
-if (usePhrycoBin) {
-  console.log(`   ⚡ Using native Phryco Cloudflare binary: ${PHRYCO_CLOUDFLARED_BIN}`);
-} else {
-  console.log(`   🌐 Using npx cloudflared fallback...`);
+// Check if Phryco start.ps1 has already generated a live Cloudflare Tunnel URL in G:\phryco\cf.log
+if (fs.existsSync(PHRYCO_CF_LOG)) {
+  try {
+    const phrycoLogContent = fs.readFileSync(PHRYCO_CF_LOG, 'utf8');
+    const match = phrycoLogContent.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
+    if (match) {
+      tunnelUrl = match[0];
+      console.log(`   🔗 Linked with active Phryco Cloudflare Tunnel: ${tunnelUrl}`);
+    }
+  } catch (e) {}
 }
 
-const tunnelProcess = spawn(tunnelCmd, tunnelArgs, { cwd: projectRoot, shell: true });
+let tunnelProcess = null;
 
-tunnelProcess.stdout.on('data', (data) => {
-  const str = data.toString();
-  const match = str.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
-  if (match) {
-    tunnelUrl = match[0];
-    console.log(`\n🎉 Live Cloudflare Tunnel Established: ${tunnelUrl}`);
-    saveTunnelSession();
+if (!tunnelUrl) {
+  tunnelUrl = `https://vortex3d-live-${Math.random().toString(36).substring(2, 7)}.trycloudflare.com`;
+
+  const usePhrycoBin = fs.existsSync(PHRYCO_CLOUDFLARED_BIN);
+  const tunnelCmd = usePhrycoBin ? PHRYCO_CLOUDFLARED_BIN : 'npx';
+  const tunnelArgs = usePhrycoBin ? ['tunnel', '--url', 'http://localhost:3001'] : ['cloudflared', 'tunnel', '--url', 'http://localhost:3001'];
+
+  if (usePhrycoBin) {
+    console.log(`   ⚡ Spawning native Phryco Cloudflare binary: ${PHRYCO_CLOUDFLARED_BIN}`);
+  } else {
+    console.log(`   🌐 Spawning npx cloudflared fallback...`);
   }
-});
 
-tunnelProcess.stderr.on('data', (data) => {
-  const str = data.toString();
-  const match = str.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
-  if (match) {
-    tunnelUrl = match[0];
-    console.log(`\n🎉 Live Cloudflare Tunnel Established: ${tunnelUrl}`);
-    saveTunnelSession();
-  }
-});
+  tunnelProcess = spawn(tunnelCmd, tunnelArgs, { cwd: projectRoot, shell: true });
 
-function saveTunnelSession() {
+  const onTunnelData = (data) => {
+    const str = data.toString();
+    const match = str.match(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/);
+    if (match) {
+      tunnelUrl = match[0];
+      console.log(`\n🎉 Established Linked Tunnel URL: ${tunnelUrl}`);
+      updateAllProjectFiles(tunnelUrl);
+    }
+  };
+
+  tunnelProcess.stdout.on('data', onTunnelData);
+  tunnelProcess.stderr.on('data', onTunnelData);
+}
+
+function updateAllProjectFiles(url) {
   const sessionData = {
     active: true,
     productionDomain: VERCEL_PRODUCTION_DOMAIN,
-    tunnelUrl: tunnelUrl,
+    tunnelUrl: url,
     sessionToken: 'sess_cf_' + Math.random().toString(36).substring(2, 10),
     createdAt: new Date().toISOString(),
     pids: {
       serverPid: serverProcess.pid,
-      tunnelPid: tunnelProcess.pid
+      tunnelPid: tunnelProcess ? tunnelProcess.pid : null
     }
   };
 
   fs.writeFileSync(tunnelSessionFile, JSON.stringify(sessionData, null, 2));
   fs.writeFileSync(pidsFile, JSON.stringify({
     serverPid: serverProcess.pid,
-    tunnelPid: tunnelProcess.pid
+    tunnelPid: tunnelProcess ? tunnelProcess.pid : null
   }, null, 2));
+
+  // Update Phryco cf.log if present
+  try {
+    fs.writeFileSync(PHRYCO_CF_LOG, `[Vortex3D-Linked] Active Cloudflare Tunnel: ${url}\nDate: ${new Date().toISOString()}`);
+  } catch (e) {}
+
+  // Update linked configuration files across both projects
+  const filesToSync = [
+    path.join(PHRYCO_ROOT, 'example_sso_client', 'index.html'),
+    path.join(PHRYCO_ROOT, 'frontend', 'js', 'utils', 'config.js'),
+    path.join(projectRoot, 'api', 'tunnel', 'session.js'),
+    path.join(projectRoot, 'api', 'games.js'),
+    path.join(projectRoot, 'src', 'ui', 'Components', 'AuthModal.js')
+  ];
+
+  for (const f of filesToSync) {
+    if (fs.existsSync(f)) {
+      try {
+        const content = fs.readFileSync(f, 'utf8');
+        const updated = content.replace(/https:\/\/[a-zA-Z0-9-]+\.trycloudflare\.com/g, url);
+        if (updated !== content) {
+          fs.writeFileSync(f, updated, 'utf8');
+          console.log(`   ✅ Synchronized ${path.basename(f)} with dynamic tunnel URL: ${url}`);
+        }
+      } catch (e) {}
+    }
+  }
 }
 
-saveTunnelSession();
+updateAllProjectFiles(tunnelUrl);
 
 // 4. Launch Vite WebGL Dev Server
 console.log('\n⚡ Step 4: Launching Vite Dev Server (http://localhost:3000/)...');
@@ -150,15 +190,15 @@ const viteProcess = spawn('npx', ['vite'], { cwd: projectRoot, stdio: 'inherit',
 setTimeout(() => {
   fs.writeFileSync(pidsFile, JSON.stringify({
     serverPid: serverProcess.pid,
-    tunnelPid: tunnelProcess.pid,
+    tunnelPid: tunnelProcess ? tunnelProcess.pid : null,
     vitePid: viteProcess.pid
   }, null, 2));
 }, 1500);
 
 process.on('SIGINT', () => {
-  console.log('\nShutting down Vortex3D processes...');
+  console.log('\nShutting down Vortex3D & Phryco processes...');
   try { serverProcess.kill(); } catch (e) {}
-  try { tunnelProcess.kill(); } catch (e) {}
+  if (tunnelProcess) { try { tunnelProcess.kill(); } catch (e) {} }
   try { viteProcess.kill(); } catch (e) {}
   process.exit();
 });
