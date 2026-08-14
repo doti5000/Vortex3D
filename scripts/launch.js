@@ -11,13 +11,14 @@ const tunnelSessionFile = path.join(storageDir, 'tunnel-session.json');
 const pidsFile = path.join(storageDir, 'pids.json');
 
 const VERCEL_PRODUCTION_DOMAIN = 'https://vortex3d.vercel.app/';
+const PHRYCO_CLOUDFLARED_BIN = 'G:\\phryco\\cloudflared.exe';
 
 if (!fs.existsSync(storageDir)) {
   fs.mkdirSync(storageDir, { recursive: true });
 }
 
 console.log('----------------------------------------------------');
-console.log('🚀 Vortex3D Master Launcher & Automated Tunnel Engine');
+console.log('🚀 Vortex3D Master Launcher & Phryco Enterprise Pipeline');
 console.log('----------------------------------------------------');
 
 // Helper to kill active listening processes on target port
@@ -40,8 +41,8 @@ function killPortProcess(port) {
   } catch (e) {}
 }
 
-// 0. Clean up existing processes on ports 3000 & 3001
-console.log('🧹 Step 0: Detecting & terminating active server/tunnel instances on ports 3000/3001...');
+// 0. Pre-flight Process Tree Cleanup
+console.log('🧹 Step 0: Pre-flight cleanup on ports 3000 & 3001...');
 killPortProcess(3000);
 killPortProcess(3001);
 
@@ -59,20 +60,20 @@ if (fs.existsSync(pidsFile)) {
   } catch (e) {}
 }
 
-console.log('✅ Port 3000 and 3001 are free and ready.');
+console.log('✅ Ports 3000 & 3001 cleared.');
 
 // 1. Sync & Push Codebase to GitHub (doti5000/Vortex3D.git) for Vercel Deployment
 console.log('\n📦 Step 1: Staging & pushing codebase to GitHub for Vercel deployment (https://vortex3d.vercel.app/)...');
 try {
   execSync('git add .', { cwd: projectRoot, stdio: 'ignore' });
   try {
-    execSync('git commit -m "Auto-deploy update to Vortex3D Vercel production"', { cwd: projectRoot, stdio: 'ignore' });
+    execSync('git commit -m "Integrate Phryco LLC SSO & Enterprise Platform Architecture"', { cwd: projectRoot, stdio: 'ignore' });
   } catch (e) {}
   
   execSync('git branch -M main', { cwd: projectRoot, stdio: 'ignore' });
   try {
     execSync('git push -u origin main', { cwd: projectRoot, stdio: 'inherit' });
-    console.log(`✅ Successfully pushed codebase to GitHub. Vercel deployment active at: ${VERCEL_PRODUCTION_DOMAIN}`);
+    console.log(`✅ Successfully pushed to GitHub. Vercel active at: ${VERCEL_PRODUCTION_DOMAIN}`);
   } catch (pushErr) {
     console.warn('⚠️ Push warning (local server continuing):', pushErr.message);
   }
@@ -84,14 +85,21 @@ try {
 console.log('\n🗄️ Step 2: Starting Node.js Express & WebSocket Backend Server (Port 3001)...');
 const serverProcess = spawn('node', ['server/index.js'], { cwd: projectRoot, stdio: 'inherit' });
 
-// 3. Automated Real Cloudflare Tunnel Setup (`cloudflared`)
-console.log('\n🌐 Step 3: Launching Automated Cloudflare Tunnel for Network Sessions...');
+// 3. Automated Cloudflare Tunnel Setup (Preferring Native G:\phryco\cloudflared.exe)
+console.log('\n🌐 Step 3: Launching Cloudflare Tunnel Networking...');
 let tunnelUrl = `https://vortex3d-live-${Math.random().toString(36).substring(2, 7)}.trycloudflare.com`;
 
-const tunnelProcess = spawn('npx', ['cloudflared', 'tunnel', '--url', 'http://localhost:3001'], {
-  cwd: projectRoot,
-  shell: true
-});
+const usePhrycoBin = fs.existsSync(PHRYCO_CLOUDFLARED_BIN);
+const tunnelCmd = usePhrycoBin ? PHRYCO_CLOUDFLARED_BIN : 'npx';
+const tunnelArgs = usePhrycoBin ? ['tunnel', '--url', 'http://localhost:3001'] : ['cloudflared', 'tunnel', '--url', 'http://localhost:3001'];
+
+if (usePhrycoBin) {
+  console.log(`   ⚡ Using native Phryco Cloudflare binary: ${PHRYCO_CLOUDFLARED_BIN}`);
+} else {
+  console.log(`   🌐 Using npx cloudflared fallback...`);
+}
+
+const tunnelProcess = spawn(tunnelCmd, tunnelArgs, { cwd: projectRoot, shell: true });
 
 tunnelProcess.stdout.on('data', (data) => {
   const str = data.toString();
@@ -139,7 +147,6 @@ saveTunnelSession();
 console.log('\n⚡ Step 4: Launching Vite Dev Server (http://localhost:3000/)...');
 const viteProcess = spawn('npx', ['vite'], { cwd: projectRoot, stdio: 'inherit', shell: true });
 
-// Update PIDs file with Vite PID
 setTimeout(() => {
   fs.writeFileSync(pidsFile, JSON.stringify({
     serverPid: serverProcess.pid,
