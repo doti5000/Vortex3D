@@ -131,9 +131,14 @@ export class GameClient {
     const curPos = [this.playerCharacter.group.position.x, Math.max(4.0, this.playerCharacter.group.position.y), this.playerCharacter.group.position.z];
     this.playerCharacter.initPhysics(curPos);
 
-    // Connect to server
-    const serverUrl = this.tunnelUrl ? this.tunnelUrl.replace('https', 'wss').replace('http', 'ws') : 'ws://localhost:3001';
-    this.multiplayerClient.connect(serverUrl, this.gameId, this.playerCharacter);
+    // Initialize Network
+    this.multiplayerClient = new MultiplayerClient();
+    
+    // Convert active api base url to wss
+    const activeApiUrl = getApiBaseUrl();
+    const serverUrl = activeApiUrl.replace('https://', 'wss://').replace('http://', 'ws://');
+    
+    await this.multiplayerClient.connect(serverUrl, this.gameId, this.playerCharacter);
 
     // Start simulation right away for client
     this.startSimulation();

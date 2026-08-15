@@ -106,7 +106,7 @@ export class GamesPortal {
             <p class="game-card-desc">${game.description || 'Live Vortex3D multiplayer game.'}</p>
             <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 8px;">Creator: <b>${game.creator_name || game.user_id || 'User'}</b></div>
             <div class="game-card-footer">
-              <span style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono);">👤 ${game.plays || 1} Plays</span>
+              <span style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono);">▶️ ${game.plays || 1} Visits</span>
               <button class="btn btn-primary btn-join-game">🎮 Join Game</button>
             </div>
           </div>

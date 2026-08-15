@@ -258,10 +258,10 @@ export class StudioApp {
 
         if (this.currentGameId) {
           gameData.id = this.currentGameId;
-        }
-        gameData.tunnelUrl = tunnelUrl + '?room=' + Math.floor(Math.random()*1000);
+        gameData.tunnelUrl = tunnelUrl;
         gameData.userId = user ? user.id : 'usr_guest';
         gameData.sceneData = JSON.parse(this.sceneManager.serialize());
+        gameData.sceneData.maxPlayers = gameData.maxPlayers || Infinity;
 
         try {
           const res = await fetch(`${getApiBaseUrl()}/api/games/publish`, {
