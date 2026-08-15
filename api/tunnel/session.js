@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   return res.status(200).json({
     active: true,
     productionDomain: 'https://vortex3d.vercel.app/',
-    tunnelUrl: 'https://vortex3d-live-yge2q.trycloudflare.com',
+    tunnelUrl: 'https://magical-nasa-guarantees-seems.trycloudflare.com',
     createdAt: new Date().toISOString()
   });
 }
