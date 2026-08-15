@@ -39,7 +39,7 @@ export default async function handler(req, res) {
       title: 'Classic R6 Avatar Arena',
       description: 'Multiplayer blocky avatar playground with obstacle ramps, classic face customization, and physics trampolines!',
       thumbnail_url: '',
-      tunnel_url: 'https://vortex3d-live-ctx5u.trycloudflare.com?room=arena1',
+      tunnel_url: 'https://dust-reed-bennett-pads.trycloudflare.com?room=arena1',
       plays: 1420,
       likes: 89,
       created_at: new Date().toISOString()
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
       title: 'WASM Physics Destruction Spawner',
       description: 'Stack towers of physics boxes, trigger anti-gravity fields with Luau scripts, and launch wrecking balls!',
       thumbnail_url: '',
-      tunnel_url: 'https://vortex3d-live-ctx5u.trycloudflare.com?room=sandbox1',
+      tunnel_url: 'https://dust-reed-bennett-pads.trycloudflare.com?room=sandbox1',
       plays: 980,
       likes: 64,
       created_at: new Date().toISOString()
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
       title: '3D Luau Vehicle Highway Rush',
       description: 'Drive high-speed cars controlled by Luau scripts, launch over mega ramps, and smash obstacles.',
       thumbnail_url: '',
-      tunnel_url: 'https://vortex3d-live-ctx5u.trycloudflare.com?room=highway1',
+      tunnel_url: 'https://dust-reed-bennett-pads.trycloudflare.com?room=highway1',
       plays: 750,
       likes: 42,
       created_at: new Date().toISOString()
