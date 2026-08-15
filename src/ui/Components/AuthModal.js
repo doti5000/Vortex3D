@@ -91,7 +91,7 @@ export function createAuthModal({ onAuthSuccess }) {
       sessionStorage.setItem('pkce_code_verifier', code_verifier);
 
       const redirectUri = window.location.origin + '/';
-      const authUrl = \`https://phryco.vercel.app/sso.html?client_id=\${PHRYCO_CLIENT_ID}&redirect_uri=\${encodeURIComponent(redirectUri)}&response_type=code&code_challenge_method=plain&code_challenge=\${code_verifier}&scope=profile email avatar\`;
+      const authUrl = `https://phryco.vercel.app/sso.html?client_id=${PHRYCO_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&code_challenge_method=plain&code_challenge=${code_verifier}&scope=profile email avatar`;
 
       window.location.href = authUrl;
     });
