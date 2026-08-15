@@ -8,7 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { initDb, createUser, findUserByUsername, findUserById, saveGame, getGames, createSession } from './db.js';
+import { initDb, createUser, findUserByUsername, findUserById, saveGame, getGames, createSession, upsertPhrycoUser } from './db.js';
 import { VortexRoom } from './rooms/VortexRoom.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -142,6 +142,78 @@ app.get('/api/auth/me', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch user session.' });
+  }
+});
+
+// 3.5. Phryco SSO Callback
+app.post('/api/auth/sso/callback', async (req, res) => {
+  try {
+    const { code, code_verifier, redirect_uri } = req.body;
+    if (!code || !code_verifier || !redirect_uri) {
+      return res.status(400).json({ error: 'Missing PKCE parameters.' });
+    }
+
+    const tokenResponse = await fetch('https://autumn-credit-7767.forbusiness68-8-65-43.workers.dev/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: 'phryco_rHTNGFVGpzdw1Fs0wX5h',
+        code,
+        code_verifier,
+        redirect_uri
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      const errText = await tokenResponse.text();
+      console.error('SSO Token Error:', errText);
+      return res.status(401).json({ error: 'Invalid authorization code.' });
+    }
+
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+
+    const profileResponse = await fetch('https://autumn-credit-7767.forbusiness68-8-65-43.workers.dev/userinfo', {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+
+    if (!profileResponse.ok) {
+      return res.status(401).json({ error: 'Failed to fetch user profile.' });
+    }
+
+    const profileData = await profileResponse.json();
+    
+    // Upsert local user
+    const localUser = await upsertPhrycoUser(profileData);
+
+    // Issue local token
+    const token = 'tok_' + crypto.randomBytes(16).toString('hex');
+    activeSessions.set(token, localUser.id);
+
+    await createSession({
+      id: 'sess_' + crypto.randomBytes(8).toString('hex'),
+      userId: localUser.id,
+      token,
+      tunnelUrl: null
+    });
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: localUser.id,
+        username: localUser.username,
+        email: localUser.email,
+        skinColors: localUser.skin_colors || localUser.skinColors || {},
+        hatType: localUser.hat_type || localUser.hatType || 'fedora',
+        phrybucks: localUser.phrybucks
+      }
+    });
+
+  } catch (err) {
+    console.error('SSO Callback Error:', err);
+    res.status(500).json({ error: 'Failed to authenticate via SSO.' });
   }
 });
 

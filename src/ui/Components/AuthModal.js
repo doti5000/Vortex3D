@@ -10,7 +10,6 @@ export function createAuthModal({ onAuthSuccess }) {
   modal.style.cssText = 'width: 100%; max-width: 450px; background: #0f172a; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(14, 165, 233, 0.15); overflow: hidden; font-family: inherit; color: white; animation: modalIn 0.2s ease-out;';
 
   let activeTab = 'login'; // 'login' | 'register'
-  const PHRYCO_SSO_WORKER_URL = 'https://autumn-credit-7767.forbusiness68-8-65-43.workers.dev/';
   const PHRYCO_CLIENT_ID = 'phryco_rHTNGFVGpzdw1Fs0wX5h';
 
   function render() {
@@ -79,37 +78,22 @@ export function createAuthModal({ onAuthSuccess }) {
     modal.querySelector('#tab-login').addEventListener('click', () => { activeTab = 'login'; render(); });
     modal.querySelector('#tab-register').addEventListener('click', () => { activeTab = 'register'; render(); });
 
-    // Phryco SSO Button Handler - Strictly Backend Verified
-    modal.querySelector('#btn-phryco-sso').addEventListener('click', async () => {
-      const errBox = modal.querySelector('#auth-error-msg');
-      errBox.style.display = 'none';
+    // Phryco SSO Button Handler - Genuine PKCE Flow
+    modal.querySelector('#btn-phryco-sso').addEventListener('click', () => {
+      const generateRandomString = (length) => {
+        let text = '';
+        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+        for (let i = 0; i < length; i++) text += possible.charAt(Math.floor(Math.random() * possible.length));
+        return text;
+      };
+      
+      const code_verifier = generateRandomString(64);
+      sessionStorage.setItem('pkce_code_verifier', code_verifier);
 
-      try {
-        const baseUrl = getApiBaseUrl();
-        const res = await fetch(`${baseUrl}/api/auth/sso`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ clientId: PHRYCO_CLIENT_ID, ssoWorkerUrl: PHRYCO_SSO_WORKER_URL })
-        });
+      const redirectUri = window.location.origin + '/';
+      const authUrl = \`https://phryco.vercel.app/sso.html?client_id=\${PHRYCO_CLIENT_ID}&redirect_uri=\${encodeURIComponent(redirectUri)}&response_type=code&code_challenge_method=plain&code_challenge=\${code_verifier}&scope=profile email avatar\`;
 
-        const data = await res.json();
-        if (!res.ok || data.error) {
-          errBox.textContent = data.error || 'Server rejected Phryco SSO authorization.';
-          errBox.style.display = 'block';
-          return;
-        }
-
-        // Store server-issued token and authenticated user profile
-        localStorage.setItem('vortex3d_token', data.token);
-        localStorage.setItem('vortex3d_user', JSON.stringify(data.user));
-
-        if (onAuthSuccess) onAuthSuccess(data.user);
-        backdrop.remove();
-        alert(`🎉 Server Verified Phryco SSO Account!\n\nUser: ${data.user.username}\nProvider: ${data.user.provider}`);
-      } catch (err) {
-        errBox.textContent = 'Failed to connect to authentication server. Client-side fallback is disabled for security.';
-        errBox.style.display = 'block';
-      }
+      window.location.href = authUrl;
     });
 
     const form = modal.querySelector('#auth-form');

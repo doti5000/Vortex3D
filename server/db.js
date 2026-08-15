@@ -2,6 +2,7 @@ import pkg from 'pg';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 const { Pool } = pkg;
 
@@ -97,6 +98,14 @@ export async function initDb() {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
       `);
+
+      try {
+        await client.query('ALTER TABLE users ADD COLUMN phryco_id VARCHAR(64) UNIQUE');
+      } catch(e) {}
+      
+      try {
+        await client.query('ALTER TABLE users ADD COLUMN phrybucks INT DEFAULT 0');
+      } catch(e) {}
       client.release();
       console.log('PostgreSQL Database Schema initialized successfully.');
     } catch (err) {
@@ -153,6 +162,64 @@ export async function findUserById(id) {
 
   const disk = getDiskDb();
   return disk.users.find(u => u.id === id) || null;
+}
+
+export async function upsertPhrycoUser(profile) {
+  const phrycoId = profile.id;
+  
+  if (usePostgres && pool) {
+    try {
+      const res = await pool.query('SELECT * FROM users WHERE phryco_id = $1', [phrycoId]);
+      if (res.rows.length > 0) {
+        const updated = await pool.query(
+          'UPDATE users SET username = $1, phrybucks = $2 WHERE phryco_id = $3 RETURNING *',
+          [profile.username, profile.phrybucks_balance || 0, phrycoId]
+        );
+        return updated.rows[0];
+      }
+      
+      const emailRes = await pool.query('SELECT * FROM users WHERE email = $1', [profile.email]);
+      if (emailRes.rows.length > 0) {
+        const updated = await pool.query(
+          'UPDATE users SET phryco_id = $1, phrybucks = $2 WHERE email = $3 RETURNING *',
+          [phrycoId, profile.phrybucks_balance || 0, profile.email]
+        );
+        return updated.rows[0];
+      }
+      
+      const userId = 'usr_' + crypto.randomBytes(8).toString('hex');
+      const newUser = await pool.query(
+        `INSERT INTO users (id, username, email, password_hash, phryco_id, phrybucks)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+        [userId, profile.username, profile.email, 'sso_user', phrycoId, profile.phrybucks_balance || 0]
+      );
+      return newUser.rows[0];
+    } catch(err) {
+      console.warn('PG upsertPhrycoUser error:', err.message);
+    }
+  }
+
+  const disk = getDiskDb();
+  let user = disk.users.find(u => u.phrycoId === phrycoId) || disk.users.find(u => u.email === profile.email);
+  if (user) {
+    user.phrycoId = phrycoId;
+    user.username = profile.username;
+    user.phrybucks = profile.phrybucks_balance || 0;
+  } else {
+    user = {
+      id: 'usr_' + crypto.randomBytes(8).toString('hex'),
+      username: profile.username,
+      email: profile.email,
+      passwordHash: 'sso_user',
+      phrycoId: phrycoId,
+      phrybucks: profile.phrybucks_balance || 0,
+      skinColors: {},
+      hatType: 'fedora'
+    };
+    disk.users.push(user);
+  }
+  saveDiskDb(disk);
+  return user;
 }
 
 // Games Operations
