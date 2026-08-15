@@ -4,3 +4,4 @@ dist
 public/physics.wasm
 *.log
 .DS_Store
+cloudflared.exe
