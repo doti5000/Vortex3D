@@ -8,7 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { initDb, createUser, findUserByUsername, findUserById, saveGame, getGames, createSession, upsertPhrycoUser } from './db.js';
+import { initDb, createUser, findUserByUsername, findUserById, saveGame, getGames, getGamesByUserId, createSession, upsertPhrycoUser } from './db.js';
 import { VortexRoom } from './rooms/VortexRoom.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -33,9 +33,9 @@ initDb();
 // 1. Account Registration
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { username, email, password, skinColors, hatType } = req.body;
-    if (!username || !email || !password) {
-      return res.status(400).json({ error: 'Username, Email, and Password are required.' });
+    const { username, password, skinColors, hatType } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and Password are required.' });
     }
 
     const existingUser = await findUserByUsername(username);
@@ -49,7 +49,6 @@ app.post('/api/auth/register', async (req, res) => {
     const newUser = await createUser({
       id: userId,
       username,
-      email,
       passwordHash,
       skinColors: skinColors || {},
       hatType: hatType || 'fedora'
@@ -71,7 +70,6 @@ app.post('/api/auth/register', async (req, res) => {
       user: {
         id: newUser.id,
         username: newUser.username,
-        email: newUser.email,
         skinColors: newUser.skinColors || skinColors,
         hatType: newUser.hatType || hatType
       }
@@ -227,16 +225,40 @@ app.get('/api/games', async (req, res) => {
   }
 });
 
+// 4.5 Fetch User Games List
+app.get('/api/games/my', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'No authorization token provided.' });
+
+    const token = authHeader.replace('Bearer ', '');
+    const userId = activeSessions.get(token);
+    if (!userId) return res.status(401).json({ error: 'Session expired or invalid.' });
+
+    const games = await getGamesByUserId(userId);
+    res.json(games);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load user games.' });
+  }
+});
+
 // 5. Publish Game Endpoint
 app.post('/api/games/publish', async (req, res) => {
   try {
-    const { title, description, sceneData, thumbnailUrl, tunnelUrl, userId } = req.body;
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'You must be logged in to publish games.' });
+
+    const token = authHeader.replace('Bearer ', '');
+    const userId = activeSessions.get(token);
+    if (!userId) return res.status(401).json({ error: 'Session expired or invalid. Please log in again.' });
+
+    const { id, title, description, sceneData, thumbnailUrl, tunnelUrl } = req.body;
     if (!title) return res.status(400).json({ error: 'Game title is required.' });
 
-    const gameId = 'game_' + crypto.randomBytes(8).toString('hex');
+    const gameId = id || ('game_' + crypto.randomBytes(8).toString('hex'));
     const newGame = {
       id: gameId,
-      userId: userId || 'usr_guest',
+      userId: userId,
       title,
       description: description || 'User-created Vortex3D game',
       thumbnailUrl: thumbnailUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop',

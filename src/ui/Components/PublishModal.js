@@ -1,4 +1,4 @@
-export function createPublishModal({ onPublish, onClose }) {
+export function createPublishModal({ onPublish, onClose, initialData = {} }) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
 
@@ -11,12 +11,12 @@ export function createPublishModal({ onPublish, onClose }) {
 
       <div class="form-row" style="flex-direction: column; align-items: stretch;">
         <label style="width: 100%; margin-bottom: 4px;">Game Title</label>
-        <input type="text" id="pub-title" value="My Classic Luau WASM Game" placeholder="Enter game title...">
+        <input type="text" id="pub-title" value="${initialData.title || 'My Classic Luau WASM Game'}" placeholder="Enter game title...">
       </div>
 
       <div class="form-row" style="flex-direction: column; align-items: stretch;">
         <label style="width: 100%; margin-bottom: 4px;">Description</label>
-        <textarea id="pub-desc" class="luau-code-area" style="height: 70px; min-height: 70px;" placeholder="Describe game controls and features...">Explore 3D platforms, collect items, and play with classic blocky avatars powered by WASM physics and Luau scripts!</textarea>
+        <textarea id="pub-desc" class="luau-code-area" style="height: 70px; min-height: 70px;" placeholder="Describe game controls and features...">${initialData.description || 'Explore 3D platforms, collect items, and play with classic blocky avatars powered by WASM physics and Luau scripts!'}</textarea>
       </div>
 
       <div class="form-row">

@@ -1,4 +1,5 @@
 import { StudioApp } from './studio/StudioApp.js';
+import { StudioDashboard } from './studio/StudioDashboard.js';
 import { DiscoverApp } from './discover/DiscoverApp.js';
 import { GameClient } from './client/GameClient.js';
 import { getApiBaseUrl } from './network/api.js';
@@ -43,6 +44,12 @@ if (params.has('code')) {
 const mode = params.get('mode') || 'discover';
 
 if (mode === 'studio') {
+  console.log("Vortex3D: Launching Studio Dashboard");
+  const dashboard = new StudioDashboard();
+  const appEl = document.querySelector('#app');
+  appEl.innerHTML = '';
+  appEl.appendChild(dashboard.container);
+} else if (mode === 'editor') {
   console.log("Vortex3D: Launching Studio Editor");
   new StudioApp();
 } else if (mode === 'play') {

@@ -49,6 +49,8 @@ export class StudioApp {
     this.isPlaying = false;
     this.activeMode = 'studio';
     this.activePreset = 'avatar';
+    this.currentGameId = null;
+    this.currentGameData = null;
 
     this.init();
   }
@@ -179,8 +181,32 @@ export class StudioApp {
       if (k === 'x') this.triggerExplosionAtCenter();
     });
 
-    // Load initial avatar playground demo
-    this.loadPreset('avatar');
+    // Load initial workspace or preset
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameId = urlParams.get('gameId');
+    if (gameId) {
+      this.currentGameId = gameId;
+      try {
+        const res = await fetch(`${getApiBaseUrl()}/api/games`);
+        const games = await res.json();
+        const game = games.find(g => g.id === gameId);
+        if (game) {
+          this.currentGameData = game;
+          if (game.scene_data || game.sceneData) {
+             const sceneJson = typeof (game.scene_data || game.sceneData) === 'string' ? (game.scene_data || game.sceneData) : JSON.stringify(game.scene_data || game.sceneData);
+             this.importScene(sceneJson);
+          } else {
+             this.loadPreset('avatar');
+          }
+        } else {
+          this.loadPreset('avatar');
+        }
+      } catch (e) {
+        this.loadPreset('avatar');
+      }
+    } else {
+      this.loadPreset('avatar');
+    }
 
     // Start Render Loop
     this.startLoop();
@@ -206,7 +232,14 @@ export class StudioApp {
 
   openPublishModal() {
     createPublishModal({
+      initialData: this.currentGameData || {},
       onPublish: async (gameData) => {
+        const token = localStorage.getItem('vortex3d_token');
+        if (!token) {
+          alert("You must be logged in to publish workspaces!");
+          return;
+        }
+
         let user = null;
         try {
           const uStr = localStorage.getItem('vortex3d_user');
@@ -223,6 +256,9 @@ export class StudioApp {
           }
         } catch (e) {}
 
+        if (this.currentGameId) {
+          gameData.id = this.currentGameId;
+        }
         gameData.tunnelUrl = tunnelUrl + '?room=' + Math.floor(Math.random()*1000);
         gameData.userId = user ? user.id : 'usr_guest';
         gameData.sceneData = this.sceneManager.serialize();
@@ -230,7 +266,10 @@ export class StudioApp {
         try {
           const res = await fetch(`${getApiBaseUrl()}/api/games/publish`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify(gameData)
           });
           

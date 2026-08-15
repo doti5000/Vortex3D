@@ -49,12 +49,7 @@ export function createAuthModal({ onAuthSuccess }) {
             <input type="text" id="auth-username" name="username" autocomplete="username" placeholder="e.g. BuilderBob" required style="width: 100%; padding: 11px; background: #070b19; border: 1px solid #1e293b; border-radius: 6px; color: white; font-size: 14px; outline: none; box-sizing: border-box;" />
           </div>
 
-          ${activeTab === 'register' ? `
-            <div class="form-group" style="margin-bottom: 14px;">
-              <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; margin-bottom: 6px;">EMAIL ADDRESS</label>
-              <input type="email" id="auth-email" name="email" autocomplete="email" placeholder="bob@phryco.com" required style="width: 100%; padding: 11px; background: #070b19; border: 1px solid #1e293b; border-radius: 6px; color: white; font-size: 14px; outline: none; box-sizing: border-box;" />
-            </div>
-          ` : ''}
+
 
           <div class="form-group" style="margin-bottom: 20px;">
             <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; margin-bottom: 6px;">PASSWORD</label>
@@ -104,10 +99,9 @@ export function createAuthModal({ onAuthSuccess }) {
 
       const username = modal.querySelector('#auth-username').value.trim();
       const password = modal.querySelector('#auth-password').value;
-      const email = activeTab === 'register' ? modal.querySelector('#auth-email').value.trim() : null;
 
       const endpoint = activeTab === 'register' ? '/api/auth/register' : '/api/auth/login';
-      const payload = activeTab === 'register' ? { username, email, password } : { username, password };
+      const payload = { username, password };
 
       try {
         const baseUrl = getApiBaseUrl();

@@ -106,6 +106,13 @@ export async function initDb() {
       try {
         await client.query('ALTER TABLE users ADD COLUMN phrybucks INT DEFAULT 0');
       } catch(e) {}
+
+      try {
+        await client.query('ALTER TABLE users ALTER COLUMN email DROP NOT NULL');
+      } catch(e) {}
+      try {
+        await client.query('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key');
+      } catch(e) {}
       client.release();
       console.log('PostgreSQL Database Schema initialized successfully.');
     } catch (err) {
@@ -120,9 +127,9 @@ export async function createUser(user) {
   if (usePostgres && pool) {
     try {
       const res = await pool.query(
-        `INSERT INTO users (id, username, email, password_hash, skin_colors, hat_type)
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, username, email, skin_colors, hat_type, created_at`,
-        [user.id, user.username, user.email, user.passwordHash, JSON.stringify(user.skinColors || {}), user.hatType || 'fedora']
+        `INSERT INTO users (id, username, password_hash, skin_colors, hat_type)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id, username, skin_colors, hat_type, created_at`,
+        [user.id, user.username, user.passwordHash, JSON.stringify(user.skinColors || {}), user.hatType || 'fedora']
       );
       return res.rows[0];
     } catch (err) {
@@ -133,7 +140,7 @@ export async function createUser(user) {
   const disk = getDiskDb();
   disk.users.push(user);
   saveDiskDb(disk);
-  return { id: user.id, username: user.username, email: user.email, skinColors: user.skinColors, hatType: user.hatType };
+  return { id: user.id, username: user.username, skinColors: user.skinColors, hatType: user.hatType };
 }
 
 export async function findUserByUsername(username) {
@@ -267,6 +274,26 @@ export async function getGames() {
 
   const disk = getDiskDb();
   return disk.games;
+}
+
+export async function getGamesByUserId(userId) {
+  if (usePostgres && pool) {
+    try {
+      const res = await pool.query(`
+        SELECT g.*, u.username as creator_name
+        FROM games g
+        LEFT JOIN users u ON g.user_id = u.id
+        WHERE g.user_id = $1
+        ORDER BY g.created_at DESC
+      `, [userId]);
+      return res.rows;
+    } catch (err) {
+      console.warn('PG getGamesByUserId error:', err.message);
+    }
+  }
+
+  const disk = getDiskDb();
+  return disk.games.filter(g => g.userId === userId);
 }
 
 // Session Tracking
