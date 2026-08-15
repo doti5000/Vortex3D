@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
-import { Server, matchMaker } from 'colyseus';
+import colyseus from 'colyseus';
+const { Server, matchMaker } = colyseus;
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import fs from 'fs';

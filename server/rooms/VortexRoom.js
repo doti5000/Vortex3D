@@ -1,5 +1,7 @@
-import { Room } from 'colyseus';
-import { Schema, MapSchema, type } from '@colyseus/schema';
+import colyseus from 'colyseus';
+const { Room } = colyseus;
+import schema from '@colyseus/schema';
+const { Schema, MapSchema, type } = schema;
 
 class PlayerState extends Schema {
   constructor() {
