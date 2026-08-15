@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   return res.status(200).json({
     active: true,
     productionDomain: 'https://vortex3d.vercel.app/',
-    tunnelUrl: 'https://boulder-decades-armstrong-fought.trycloudflare.com',
+    tunnelUrl: 'https://vortex3d-live-0qaze.trycloudflare.com',
     createdAt: new Date().toISOString()
   });
 }
