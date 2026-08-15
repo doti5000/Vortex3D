@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+import { initDb, createUser, createSession } from '../../server/db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -7,21 +9,44 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { username, email, password } = req.body || {};
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password are required.' });
-  }
+  try {
+    await initDb();
+    
+    const { username, password, skinColors, hatType } = req.body || {};
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required.' });
+    }
 
-  const userId = 'usr_' + crypto.randomBytes(6).toString('hex');
-  const token = 'tok_' + crypto.randomBytes(12).toString('hex');
+    const passwordHash = await bcrypt.hash(password, 10);
+    const userId = 'usr_' + crypto.randomBytes(8).toString('hex');
+    const token = 'tok_' + crypto.randomBytes(16).toString('hex');
 
-  return res.status(200).json({
-    success: true,
-    token,
-    user: {
+    const newUser = await createUser({
       id: userId,
       username,
-      email: email || `${username}@vortex3d.vercel.app`
-    }
-  });
+      passwordHash,
+      skinColors: skinColors || {},
+      hatType: hatType || 'fedora'
+    });
+
+    await createSession({
+      id: 'sess_' + crypto.randomBytes(8).toString('hex'),
+      userId,
+      token,
+      tunnelUrl: null
+    });
+
+    return res.status(200).json({
+      success: true,
+      token,
+      user: {
+        id: newUser.id,
+        username: newUser.username,
+        skinColors: newUser.skinColors || skinColors,
+        hatType: newUser.hatType || hatType
+      }
+    });
+  } catch (e) {
+    return res.status(500).json({ error: 'Failed to register account.' });
+  }
 }

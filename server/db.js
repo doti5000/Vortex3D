@@ -32,7 +32,13 @@ function getDiskDb() {
 }
 
 function saveDiskDb(data) {
-  fs.writeFileSync(diskDbPath, JSON.stringify(data, null, 2));
+  try {
+    fs.writeFileSync(diskDbPath, JSON.stringify(data, null, 2));
+  } catch (err) {
+    if (err.code !== 'EROFS') {
+      console.warn('Failed to save local disk db:', err.message);
+    }
+  }
 }
 
 // PostgreSQL Connection Pool Configuration
@@ -312,4 +318,21 @@ export async function createSession(session) {
   const disk = getDiskDb();
   disk.sessions.push(session);
   saveDiskDb(disk);
+}
+
+export async function findSessionByToken(token) {
+  if (usePostgres && pool) {
+    try {
+      const res = await pool.query('SELECT * FROM sessions WHERE session_token = $1', [token]);
+      if (res.rows.length > 0) {
+        const row = res.rows[0];
+        return { id: row.id, userId: row.user_id, token: row.session_token, tunnelUrl: row.tunnel_url };
+      }
+    } catch (err) {
+      console.warn('PG findSessionByToken error:', err.message);
+    }
+  }
+
+  const disk = getDiskDb();
+  return disk.sessions.find(s => s.token === token) || null;
 }
