@@ -1,1 +1,1 @@
-export const ACTIVE_TUNNEL_URL = 'https://vortex3d-live-5pwae.trycloudflare.com';
+export const ACTIVE_TUNNEL_URL = 'https://dam-announce-curve-downloading.trycloudflare.com';
