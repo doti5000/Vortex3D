@@ -59,7 +59,6 @@ export class LuauVM {
       // Create Parent Instance wrapper for script.Parent
       const scriptParent = {
         Name: entity.name,
-        Position: env.Vector3.new(entity.transform.position[0], entity.transform.position[1], entity.transform.position[2]),
         ApplyImpulse: (impulse) => {
           if (entity.rigidBodyId) {
             this.physicsManager.applyImpulse(entity.rigidBodyId, impulse.X, impulse.Y, impulse.Z);
@@ -78,6 +77,11 @@ export class LuauVM {
         },
         Touched: new env.Signal()
       };
+
+      Object.defineProperty(scriptParent, 'Position', {
+        get: () => env.Vector3.new(entity.transform.position[0], entity.transform.position[1], entity.transform.position[2]),
+        set: (pos) => scriptParent.SetPosition(pos)
+      });
 
       if (this.lua) {
         // Set globals in Luau WASM State

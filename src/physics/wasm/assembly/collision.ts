@@ -179,4 +179,52 @@ export class CollisionDetector {
     const penetration = sphere.radius - dist;
     return new Contact(sphere, box, normal, penetration);
   }
+
+  /**
+   * Continuous Collision Detection (CCD) Time-Of-Impact (TOI) Swept Ray/Sphere Test
+   */
+  static detectCcd(a: RigidBody, b: RigidBody, dt: f32): Contact | null {
+    const relVel = a.velocity.sub(b.velocity);
+    const speed = relVel.length();
+    const moveDist = speed * dt;
+
+    // Trigger CCD only for high-speed dynamic objects
+    if (moveDist < a.radius && moveDist < a.extents.x) {
+      return CollisionDetector.detect(a, b);
+    }
+
+    const rayDir = relVel.scale(f32(1.0) / speed);
+    const rayOrigin = a.position;
+
+    // Swept Ray vs Box AABB test for TOI prediction
+    const minB = b.position.sub(b.extents.scale(f32(0.5)));
+    const maxB = b.position.add(b.extents.scale(f32(0.5)));
+
+    let tmin: f32 = (minB.x - rayOrigin.x) / (rayDir.x != f32(0.0) ? rayDir.x : f32(0.00001));
+    let tmax: f32 = (maxB.x - rayOrigin.x) / (rayDir.x != f32(0.0) ? rayDir.x : f32(0.00001));
+    if (tmin > tmax) { const temp = tmin; tmin = tmax; tmax = temp; }
+
+    let tymin: f32 = (minB.y - rayOrigin.y) / (rayDir.y != f32(0.0) ? rayDir.y : f32(0.00001));
+    let tymax: f32 = (maxB.y - rayOrigin.y) / (rayDir.y != f32(0.0) ? rayDir.y : f32(0.00001));
+    if (tymin > tymax) { const temp = tymin; tymin = tymax; tymax = temp; }
+
+    if ((tmin > tymax) || (tymin > tmax)) return CollisionDetector.detect(a, b);
+    if (tymin > tmin) tmin = tymin;
+    if (tymax < tmax) tmax = tymax;
+
+    let tzmin: f32 = (minB.z - rayOrigin.z) / (rayDir.z != f32(0.0) ? rayDir.z : f32(0.00001));
+    let tzmax: f32 = (maxB.z - rayOrigin.z) / (rayDir.z != f32(0.0) ? rayDir.z : f32(0.00001));
+    if (tzmin > tzmax) { const temp = tzmin; tzmin = tzmax; tzmax = temp; }
+
+    if ((tmin > tzmax) || (tzmin > tmax)) return CollisionDetector.detect(a, b);
+    if (tzmin > tmin) tmin = tzmin;
+
+    if (tmin >= f32(0.0) && tmin <= moveDist) {
+      const normal = rayDir.scale(f32(-1.0));
+      const penetration = moveDist - tmin + f32(0.05);
+      return new Contact(a, b, normal, penetration);
+    }
+
+    return CollisionDetector.detect(a, b);
+  }
 }

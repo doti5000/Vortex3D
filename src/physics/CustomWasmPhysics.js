@@ -108,29 +108,29 @@ export class CustomWasmPhysics {
 
   getPosition(bodyId) {
     if (!this.exports || bodyId === null) return [0, 0, 0];
-    return [
-      this.exports.getPositionX(bodyId),
-      this.exports.getPositionY(bodyId),
-      this.exports.getPositionZ(bodyId)
-    ];
+    if (!this._cachedPos) this._cachedPos = [0, 0, 0];
+    this._cachedPos[0] = this.exports.getPositionX(bodyId);
+    this._cachedPos[1] = this.exports.getPositionY(bodyId);
+    this._cachedPos[2] = this.exports.getPositionZ(bodyId);
+    return this._cachedPos;
   }
 
   getVelocity(bodyId) {
     if (!this.exports || bodyId === null) return [0, 0, 0];
-    return [
-      this.exports.getVelocityX(bodyId),
-      this.exports.getVelocityY(bodyId),
-      this.exports.getVelocityZ(bodyId)
-    ];
+    if (!this._cachedVel) this._cachedVel = [0, 0, 0];
+    this._cachedVel[0] = this.exports.getVelocityX(bodyId);
+    this._cachedVel[1] = this.exports.getVelocityY(bodyId);
+    this._cachedVel[2] = this.exports.getVelocityZ(bodyId);
+    return this._cachedVel;
   }
 
   getRotation(bodyId) {
     if (!this.exports || bodyId === null) return [0, 0, 0];
-    return [
-      this.exports.getRotationX(bodyId),
-      this.exports.getRotationY(bodyId),
-      this.exports.getRotationZ(bodyId)
-    ];
+    if (!this._cachedRot) this._cachedRot = [0, 0, 0];
+    this._cachedRot[0] = this.exports.getRotationX(bodyId);
+    this._cachedRot[1] = this.exports.getRotationY(bodyId);
+    this._cachedRot[2] = this.exports.getRotationZ(bodyId);
+    return this._cachedRot;
   }
 
   step(dt = 1 / 60) {

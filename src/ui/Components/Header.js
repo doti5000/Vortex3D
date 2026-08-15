@@ -1,6 +1,6 @@
 import { createAuthModal } from './AuthModal.js';
 
-export function createHeader({ onPlay, onPause, onStep, getIsPlaying, onBackendChange, activeBackend, onPresetChange, onExportScene, onImportScene, onOpenPublishModal, onSwitchFace, onModeToggle, activeMode = 'studio' }) {
+export function createHeader({ onPlay, onPause, onStep, getIsPlaying, onBackendChange, activeBackend, onPresetChange, onExportScene, onImportScene, onOpenPublishModal, onSwitchFace, onModeToggle, activeMode = 'studio', onRecordToggle }) {
   const header = document.createElement('header');
   header.className = 'studio-header';
 
@@ -72,35 +72,36 @@ export function createHeader({ onPlay, onPause, onStep, getIsPlaying, onBackendC
 
     <!-- Center: Simulation Controls & Presets -->
     <div class="header-center">
-      <select id="preset-select" class="select-input" title="Select Preset Demo Scene">
+      <select id="preset-select" class="select-input" title="Select Preset Demo Scene" aria-label="Select Preset Demo Scene">
         <option value="avatar">Avatar Demo</option>
         <option value="sandbox">Physics Sandbox</option>
         <option value="vehicle">Vehicle Game</option>
         <option value="platformer">Platformer Game</option>
       </select>
 
-      <button id="btn-play-pause" class="btn btn-primary">Play ►</button>
-      <button id="btn-step" class="btn">Step ➔</button>
+      <button id="btn-play-pause" class="btn btn-primary" aria-label="Toggle Physics Simulation Play Pause">Play ►</button>
+      <button id="btn-step" class="btn" aria-label="Single Step Physics Simulation">Step ➔</button>
     </div>
 
     <!-- Right: Auth, Engine, Face, Publish & Tools -->
     <div class="header-right">
       <div id="header-auth-container"></div>
 
-      <select id="face-select" class="select-input" title="Switch Face Decal">
+      <select id="face-select" class="select-input" title="Switch Face Decal" aria-label="Switch Avatar Face Decal">
         <option value="/textures/classic-face-texture.png">🎭 Smile</option>
         <option value="/textures/classic-happy-face-texture.png">🎭 Happy</option>
       </select>
 
-      <select id="backend-select" class="select-input" title="Switch WASM Physics Engine Backend">
+      <select id="backend-select" class="select-input" title="Switch WASM Physics Engine Backend" aria-label="Switch WASM Physics Engine Backend">
         <option value="custom" ${activeBackend === 'custom' ? 'selected' : ''}>⚡ VortexWASM</option>
         <option value="rapier" ${activeBackend === 'rapier' ? 'selected' : ''}>⚡ Rapier3D</option>
       </select>
 
-      <button id="btn-publish-game" class="btn btn-success" title="Publish Game Online">🚀 Publish</button>
-      <button id="btn-export" class="btn" title="Export Scene JSON">📤 Export</button>
-      <button id="btn-import" class="btn" title="Import Scene JSON">📥 Import</button>
-      <input type="file" id="file-import" accept=".json" style="display: none;">
+      <button id="btn-record-canvas" class="btn btn-warning" title="Record 60 FPS Canvas Video" aria-label="Record 60 FPS Canvas Video">📹 Record</button>
+      <button id="btn-publish-game" class="btn btn-success" title="Publish Game Online" aria-label="Publish Game Online">🚀 Publish</button>
+      <button id="btn-export" class="btn" title="Export Scene JSON" aria-label="Export Scene JSON">📤 Export</button>
+      <button id="btn-import" class="btn" title="Import Scene JSON" aria-label="Import Scene JSON">📥 Import</button>
+      <input type="file" id="file-import" accept=".json" style="display: none;" aria-label="Upload Scene JSON File">
     </div>
   `;
 
@@ -137,6 +138,13 @@ export function createHeader({ onPlay, onPause, onStep, getIsPlaying, onBackendC
   publishBtn.addEventListener('click', () => onOpenPublishModal && onOpenPublishModal());
   exportBtn.addEventListener('click', () => onExportScene && onExportScene());
 
+  const recordBtn = header.querySelector('#btn-record-canvas');
+  if (recordBtn) {
+    recordBtn.addEventListener('click', () => {
+      if (onRecordToggle) onRecordToggle();
+    });
+  }
+
   importBtn.addEventListener('click', () => importInput.click());
   importInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -158,6 +166,17 @@ export function createHeader({ onPlay, onPause, onStep, getIsPlaying, onBackendC
         playPauseBtn.textContent = 'Play ►';
         playPauseBtn.classList.remove('btn-warning');
         playPauseBtn.classList.add('btn-primary');
+      }
+    },
+    updateRecordButtonUI: (isRecording) => {
+      if (recordBtn) {
+        if (isRecording) {
+          recordBtn.textContent = '🔴 Recording...';
+          recordBtn.style.animation = 'pulse 1s infinite';
+        } else {
+          recordBtn.textContent = '📹 Record';
+          recordBtn.style.animation = 'none';
+        }
       }
     }
   };

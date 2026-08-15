@@ -277,6 +277,32 @@ export class Character {
     }
   }
 
+  takeDamage(amount) {
+    if (this.humanoid.health <= 0) return;
+
+    this.humanoid.health = Math.max(0, this.humanoid.health - amount);
+    console.log(`${this.name} took ${amount} damage! Remaining HP: ${this.humanoid.health}`);
+
+    if (this.humanoid.health <= 0) {
+      this.triggerRagdoll();
+      setTimeout(() => this.respawn(), 2000);
+    }
+  }
+
+  respawn(spawnPos = [0, 5, 0]) {
+    if (this.ragdoll && this.ragdoll.active) {
+      this.ragdoll.deactivate();
+    }
+    this.humanoid.health = this.humanoid.maxHealth;
+    this.humanoid.state = 'idle';
+
+    if (this.rigidBodyId) {
+      this.physicsManager.setPosition(this.rigidBodyId, ...spawnPos);
+      this.physicsManager.setVelocity(this.rigidBodyId, 0, 0, 0);
+    }
+    this.group.position.set(...spawnPos);
+  }
+
   update() {
     if (this.ragdoll && this.ragdoll.active) {
       this.ragdoll.update();
@@ -330,6 +356,12 @@ export class Character {
 
     const pos = this.physicsManager.getPosition(this.rigidBodyId);
     this.group.position.set(pos[0], pos[1], pos[2]);
+
+    // Void Death (-100% HP below y < -30)
+    if (pos[1] < -30 && this.humanoid.health > 0) {
+      console.log(`${this.name} fell into the void! (-100% HP)`);
+      this.takeDamage(100);
+    }
   }
 
   destroy() {

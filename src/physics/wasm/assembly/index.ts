@@ -175,8 +175,8 @@ export function stepSimulation(dt: f32): void {
           continue;
         }
 
-        // NARROWPHASE: Full 15-axis OBB SAT test
-        const contact = CollisionDetector.detect(a, b);
+        // NARROWPHASE: Continuous Collision Detection (CCD) TOI + 15-axis OBB SAT test
+        const contact = CollisionDetector.detectCcd(a, b, subDt);
         if (contact !== null) {
           PhysicsSolver.resolveContact(contact);
         }

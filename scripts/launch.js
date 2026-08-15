@@ -108,11 +108,16 @@ if (!tunnelUrl) {
   tunnelUrl = `https://vortex3d-live-${Math.random().toString(36).substring(2, 7)}.trycloudflare.com`;
 
   const usePhrycoBin = fs.existsSync(PHRYCO_CLOUDFLARED_BIN);
-  const tunnelCmd = usePhrycoBin ? PHRYCO_CLOUDFLARED_BIN : 'npx';
-  const tunnelArgs = usePhrycoBin ? ['tunnel', '--url', 'http://localhost:3001'] : ['cloudflared', 'tunnel', '--url', 'http://localhost:3001'];
+  const localCloudflaredBin = path.join(__dirname, 'cloudflared.exe');
+  const useLocalBin = fs.existsSync(localCloudflaredBin);
+
+  const tunnelCmd = usePhrycoBin ? PHRYCO_CLOUDFLARED_BIN : (useLocalBin ? localCloudflaredBin : 'npx');
+  const tunnelArgs = (usePhrycoBin || useLocalBin) ? ['tunnel', '--url', 'http://localhost:3001'] : ['cloudflared', 'tunnel', '--url', 'http://localhost:3001'];
 
   if (usePhrycoBin) {
     console.log(`   ⚡ Spawning native Phryco Cloudflare binary: ${PHRYCO_CLOUDFLARED_BIN}`);
+  } else if (useLocalBin) {
+    console.log(`   ⚡ Spawning local Cloudflare binary: ${localCloudflaredBin}`);
   } else {
     console.log(`   🌐 Spawning npx cloudflared fallback...`);
   }

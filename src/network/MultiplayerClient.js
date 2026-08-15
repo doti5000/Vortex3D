@@ -1,62 +1,77 @@
 import { Character } from '../engine/Character.js';
+import * as Colyseus from 'colyseus.js';
 
 export class MultiplayerClient {
   constructor(scene, physicsManager) {
     this.scene = scene;
     this.physicsManager = physicsManager;
-    this.socket = null;
+    this.colyseusClient = null;
+    this.room = null;
     this.peerId = null;
-    this.roomCode = 'lobby';
-    this.remotePlayers = new Map(); // peerId -> Character
+    this.remotePlayers = new Map(); // sessionId -> Character
     this.isConnected = false;
     this.onStatusChange = null;
   }
 
   /**
-   * Connect to multiplayer session.
+   * Connect to authoritative Colyseus multiplayer session.
    * STRICT RULE: Multiplayer CANNOT start if player doesn't have an avatar!
    */
-  connect(serverUrl = 'ws://localhost:3001', roomCode = 'lobby', localCharacter = null) {
+  async connect(serverUrl = 'ws://localhost:3001', roomCode = 'vortex_room', localCharacter = null) {
     if (!localCharacter || !localCharacter.group) {
       console.warn('⚠️ Multiplayer Connection Blocked: Local player does not have an active avatar!');
       alert('⚠️ Multiplayer Cannot Start!\n\nYou must have an active player avatar in the scene to launch multiplayer.\n\nPlease select the "Classic R6 Avatar Playground" preset or spawn an Avatar first.');
       return false;
     }
 
-    this.roomCode = roomCode;
     try {
-      this.socket = new WebSocket(serverUrl);
+      this.colyseusClient = new Colyseus.Client(serverUrl);
+      
+      // We pass the gameId as the room name, but the server needs to define it.
+      // We mapped "vortex_room" in server/index.js
+      this.room = await this.colyseusClient.joinOrCreate('vortex_room', { userId: localCharacter.id, gameId: roomCode });
+      
+      this.isConnected = true;
+      this.peerId = this.room.sessionId;
+      console.log(`Connected to Colyseus Room ${this.room.name} with Session ID: ${this.room.sessionId}`);
 
-      this.socket.onopen = () => {
-        this.isConnected = true;
-        console.log(`Connected to Multiplayer WebSocket at ${serverUrl}`);
+      if (this.onStatusChange) this.onStatusChange(true);
 
-        const initialState = {
-          name: localCharacter.name,
-          position: [localCharacter.group.position.x, localCharacter.group.position.y, localCharacter.group.position.z],
-          face: localCharacter.faceTexturePath,
-          shirt: localCharacter.shirtTexturePath
-        };
+      // Listen for remote players joining
+      this.room.state.players.onAdd((player, sessionId) => {
+        if (sessionId !== this.peerId) {
+          const remoteChar = new Character({
+            id: sessionId,
+            name: player.id || 'Remote Player',
+            position: [player.x, player.y, player.z],
+            scene: this.scene,
+            physicsManager: this.physicsManager,
+            isLocalPlayer: false
+          });
+          this.remotePlayers.set(sessionId, remoteChar);
 
-        this.socket.send(JSON.stringify({
-          type: 'join_room',
-          room: this.roomCode,
-          playerState: initialState
-        }));
+          // Listen for state changes (movement, animation)
+          player.onChange(() => {
+            if (remoteChar.group) {
+              remoteChar.group.position.set(player.x, player.y, player.z);
+              remoteChar.group.rotation.y = player.rotationY;
+              if (remoteChar.animator && player.state) {
+                remoteChar.humanoid.state = player.state;
+                remoteChar.animator.setState(player.state);
+              }
+            }
+          });
+        }
+      });
 
-        if (this.onStatusChange) this.onStatusChange(true);
-      };
-
-      this.socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        this.handleMessage(data);
-      };
-
-      this.socket.onclose = () => {
-        this.isConnected = false;
-        console.log('Multiplayer connection closed.');
-        if (this.onStatusChange) this.onStatusChange(false);
-      };
+      // Listen for remote players leaving
+      this.room.state.players.onRemove((player, sessionId) => {
+        const remoteChar = this.remotePlayers.get(sessionId);
+        if (remoteChar) {
+          remoteChar.destroy();
+          this.remotePlayers.delete(sessionId);
+        }
+      });
 
       return true;
     } catch (err) {
@@ -65,67 +80,25 @@ export class MultiplayerClient {
     }
   }
 
-  handleMessage(data) {
-    if (data.type === 'init') {
-      this.peerId = data.peerId;
-      console.log(`Assigned Peer ID: ${this.peerId} in room ${data.room}`);
-      return;
-    }
-
-    if (data.type === 'player_joined' || data.type === 'player_update') {
-      const { peerId, playerState } = data;
-      let remoteChar = this.remotePlayers.get(peerId);
-
-      if (!remoteChar) {
-        remoteChar = new Character({
-          id: peerId,
-          name: playerState.name || 'Remote Player',
-          position: playerState.position || [0, 5, 0],
-          scene: this.scene,
-          physicsManager: this.physicsManager,
-          isLocalPlayer: false
-        });
-        this.remotePlayers.set(peerId, remoteChar);
-      } else if (playerState && playerState.position) {
-        // Interpolate position
-        if (remoteChar.group) {
-          remoteChar.group.position.set(...playerState.position);
-        }
-      }
-      return;
-    }
-
-    if (data.type === 'player_left') {
-      const remoteChar = this.remotePlayers.get(data.peerId);
-      if (remoteChar) {
-        remoteChar.destroy();
-        this.remotePlayers.delete(data.peerId);
-      }
-    }
-  }
-
   sendLocalState(localCharacter) {
-    if (!this.isConnected || !this.socket || !localCharacter || !localCharacter.group) return;
+    if (!this.isConnected || !this.room || !localCharacter || !localCharacter.group) return;
 
-    const pos = [localCharacter.group.position.x, localCharacter.group.position.y, localCharacter.group.position.z];
+    const pos = localCharacter.group.position;
     const rotY = localCharacter.group.rotation.y;
 
-    this.socket.send(JSON.stringify({
-      type: 'state_update',
-      playerState: {
-        name: localCharacter.name,
-        position: pos,
-        rotationY: rotY,
-        face: localCharacter.faceTexturePath,
-        shirt: localCharacter.shirtTexturePath
-      }
-    }));
+    this.room.send("player_update", {
+      x: pos.x,
+      y: pos.y,
+      z: pos.z,
+      rotationY: rotY,
+      state: localCharacter.humanoid.state
+    });
   }
 
   disconnect() {
-    if (this.socket) {
-      this.socket.close();
-      this.socket = null;
+    if (this.room) {
+      this.room.leave();
+      this.room = null;
     }
     for (const remoteChar of this.remotePlayers.values()) {
       remoteChar.destroy();

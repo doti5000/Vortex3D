@@ -78,7 +78,6 @@ export class Renderer {
     const renderPass = new RenderPass(this.scene, this.camera);
     this.composer.addPass(renderPass);
 
-    // Subtle Unreal Bloom for Glowing WASM VFX & Neon Lights
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(width, height),
       0.35, // strength
@@ -116,12 +115,15 @@ export class Renderer {
     let mesh = this.meshMap.get(entity.id);
     let geometry;
 
+    const baseExtents = entity.collider ? entity.collider.extents : [2, 2, 2];
+
     if (entity.meshRenderer.geometryType === 'sphere') {
-      geometry = new THREE.SphereGeometry(entity.collider ? entity.collider.radius : 1, 32, 32);
+      const radius = entity.collider ? entity.collider.radius : 1;
+      geometry = new THREE.SphereGeometry(radius, 32, 32);
     } else if (entity.meshRenderer.geometryType === 'plane') {
-      geometry = new THREE.PlaneGeometry(entity.collider.extents[0], entity.collider.extents[2]);
+      geometry = new THREE.PlaneGeometry(baseExtents[0], baseExtents[2]);
     } else {
-      geometry = new THREE.BoxGeometry(entity.collider.extents[0], entity.collider.extents[1], entity.collider.extents[2]);
+      geometry = new THREE.BoxGeometry(baseExtents[0], baseExtents[1], baseExtents[2]);
     }
 
     const material = new THREE.MeshStandardMaterial({
@@ -144,7 +146,11 @@ export class Renderer {
     }
 
     mesh.position.set(...entity.transform.position);
-    mesh.rotation.set(...entity.transform.rotation);
+    mesh.rotation.set(
+      THREE.MathUtils.degToRad(entity.transform.rotation[0]),
+      THREE.MathUtils.degToRad(entity.transform.rotation[1]),
+      THREE.MathUtils.degToRad(entity.transform.rotation[2])
+    );
     mesh.scale.set(...entity.transform.scale);
   }
 

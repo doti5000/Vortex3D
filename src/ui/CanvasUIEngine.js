@@ -1,0 +1,164 @@
+import * as THREE from 'three';
+
+export class CanvasUIEngine {
+  constructor(containerElement, renderer, sceneManager) {
+    this.container = containerElement;
+    this.renderer = renderer;
+    this.sceneManager = sceneManager;
+
+    this.canvas = document.createElement('canvas');
+    this.canvas.className = 'canvas-ui-overlay';
+    this.canvas.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    `;
+    this.container.appendChild(this.canvas);
+    this.ctx = this.canvas.getContext('2d');
+
+    this.coins = 0;
+    this.playerName = 'Player 1';
+    this.rank = '#1';
+    this.damageTimer = 0;
+    this.activeDamageText = null;
+
+    this.onResize();
+    window.addEventListener('resize', () => this.onResize());
+  }
+
+  onResize() {
+    if (!this.container) return;
+    this.canvas.width = this.container.clientWidth;
+    this.canvas.height = this.container.clientHeight;
+  }
+
+  addCoins(amount = 1) {
+    this.coins += amount;
+  }
+
+  triggerDamageNotice(amount, pos3D) {
+    this.damageTimer = 2.0; // 2 seconds fade
+    this.activeDamageText = {
+      amount,
+      pos3D: [...pos3D]
+    };
+  }
+
+  update(character, dt = 0.016) {
+    if (!this.ctx) return;
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // 1. Render Roblox-style Leaderboard & Leaderstats Overlay (Top Right)
+    this.renderLeaderboard();
+
+    // 2. Render Overhead Canvas Health Bar & Damage Floating Text
+    if (character) {
+      this.renderOverheadHealthBar(character);
+    }
+  }
+
+  renderLeaderboard() {
+    const ctx = this.ctx;
+    const x = this.canvas.width - 220;
+    const y = 20;
+    const width = 200;
+    const height = 110;
+
+    // Glassmorphism Leaderboard Card
+    ctx.save();
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.strokeStyle = 'rgba(99, 102, 241, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(x, y, width, height, 10);
+    ctx.fill();
+    ctx.stroke();
+
+    // Header Title
+    ctx.fillStyle = '#6366f1';
+    ctx.font = '700 12px "Fira Code", monospace';
+    ctx.fillText('🏆 LEADERBOARD', x + 14, y + 24);
+
+    // Player Row
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = '600 13px "Inter", sans-serif';
+    ctx.fillText(this.playerName, x + 14, y + 54);
+
+    // Coins Counter
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = '700 13px "Fira Code", monospace';
+    ctx.fillText(`🪙 ${this.coins} Coins`, x + 14, y + 84);
+
+    // Rank Badge
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillText(this.rank, x + width - 40, y + 54);
+
+    ctx.restore();
+  }
+
+  renderOverheadHealthBar(character) {
+    if (!character || !character.group) return;
+
+    const ctx = this.ctx;
+    const worldPos = new THREE.Vector3();
+    character.group.getWorldPosition(worldPos);
+    worldPos.y += 2.4; // 2.4 units above avatar head
+
+    // Project 3D world position to 2D canvas screen space
+    const screenVec = worldPos.clone().project(this.renderer.camera);
+    if (screenVec.z > 1) return; // Behind camera
+
+    const screenX = (screenVec.x * 0.5 + 0.5) * this.canvas.width;
+    const screenY = (-(screenVec.y * 0.5) + 0.5) * this.canvas.height;
+
+    const barWidth = 100;
+    const barHeight = 12;
+    const barX = screenX - barWidth / 2;
+    const barY = screenY;
+
+    const healthRatio = Math.max(0, character.humanoid.health / character.humanoid.maxHealth);
+
+    ctx.save();
+    // Background bar
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(barX, barY, barWidth, barHeight, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Fill health gradient
+    const fillWidth = barWidth * healthRatio;
+    if (fillWidth > 0) {
+      const grad = ctx.createLinearGradient(barX, barY, barX + fillWidth, barY);
+      if (healthRatio > 0.5) {
+        grad.addColorStop(0, '#10b981');
+        grad.addColorStop(1, '#34d399');
+      } else if (healthRatio > 0.25) {
+        grad.addColorStop(0, '#f59e0b');
+        grad.addColorStop(1, '#fbbf24');
+      } else {
+        grad.addColorStop(0, '#ef4444');
+        grad.addColorStop(1, '#f87171');
+      }
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, fillWidth, barHeight, 6);
+      ctx.fill();
+    }
+
+    // Health Text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 10px "Fira Code", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${Math.round(character.humanoid.health)} HP`, screenX, barY - 4);
+
+    ctx.restore();
+  }
+}

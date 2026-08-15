@@ -44,17 +44,13 @@ export class PhysicsDebug {
 
         let mesh = this.meshPool.get(entity.id);
         if (!mesh) {
-          const scaledExtents = [
-            entity.collider.extents[0] * entity.transform.scale[0],
-            entity.collider.extents[1] * entity.transform.scale[1],
-            entity.collider.extents[2] * entity.transform.scale[2]
-          ];
+          const baseExtents = entity.collider ? entity.collider.extents : [2, 2, 2];
 
           let geometry;
           if (entity.collider.shapeType === 1) {
-            geometry = new THREE.SphereGeometry(entity.collider.radius * Math.max(...entity.transform.scale), 12, 12);
+            geometry = new THREE.SphereGeometry(entity.collider.radius || 1, 16, 16);
           } else {
-            geometry = new THREE.BoxGeometry(...scaledExtents);
+            geometry = new THREE.BoxGeometry(...baseExtents);
           }
 
           mesh = new THREE.Mesh(geometry, this.wireframeMaterial);
@@ -64,6 +60,7 @@ export class PhysicsDebug {
 
         mesh.position.set(...pos);
         mesh.rotation.set(...rot);
+        mesh.scale.set(...entity.transform.scale);
       }
     }
 

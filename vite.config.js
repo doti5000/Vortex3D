@@ -16,6 +16,19 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'require-corp'
     }
   },
+  build: {
+    target: 'esnext',
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          three: ['three'],
+          wasmoon: ['wasmoon'],
+          rapier: ['@dimforge/rapier3d-compat']
+        }
+      }
+    }
+  },
   optimizeDeps: {
     include: ['wasmoon', '@dimforge/rapier3d-compat']
   }
