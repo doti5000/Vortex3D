@@ -92,18 +92,20 @@ export class Scene {
       this.clear();
       this.name = data.name || 'Imported Scene';
 
-      for (const item of data.entities) {
-        const ent = new Entity(item.name);
-        ent.id = item.id;
-        ent.parentId = item.parentId;
-        ent.children = item.children || [];
-        ent.transform = item.transform;
-        ent.meshRenderer = item.meshRenderer;
-        ent.rigidBody = item.rigidBody;
-        ent.collider = item.collider;
-        ent.light = item.light;
-        ent.luauScript = item.luauScript;
-        this.addEntity(ent);
+      if (data.entities && Array.isArray(data.entities)) {
+        for (const item of data.entities) {
+          const ent = new Entity(item.name);
+          ent.id = item.id;
+          ent.parentId = item.parentId;
+          ent.children = item.children || [];
+          ent.transform = item.transform;
+          ent.meshRenderer = item.meshRenderer;
+          ent.rigidBody = item.rigidBody;
+          ent.collider = item.collider;
+          ent.light = item.light;
+          ent.luauScript = item.luauScript;
+          this.addEntity(ent);
+        }
       }
     } catch (err) {
       console.error('Failed to parse scene JSON:', err);
