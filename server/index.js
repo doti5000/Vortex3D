@@ -295,7 +295,11 @@ app.get('/api/tunnel/session', (req, res) => {
 
 const server = http.createServer(app);
 const gameServer = new Server({
-  server: server
+  server: server,
+  cors: {
+    origin: true,
+    credentials: true
+  }
 });
 
 // Register the Room
