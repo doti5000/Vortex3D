@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   return res.status(200).json({
     active: true,
     productionDomain: 'https://vortex3d.vercel.app/',
-    tunnelUrl: 'https://selected-basket-howard-retrieve.trycloudflare.com',
+    tunnelUrl: 'https://vortex3d-live-tjvsl.trycloudflare.com',
     createdAt: new Date().toISOString()
   });
 }
