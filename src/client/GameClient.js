@@ -55,7 +55,10 @@ export class GameClient {
     backBtn.style.border = '1px solid rgba(255,255,255,0.2)';
     backBtn.style.borderRadius = '4px';
     backBtn.style.cursor = 'pointer';
-    backBtn.onclick = () => window.location.href = '/?mode=discover';
+    backBtn.onclick = () => {
+      if (this.multiplayerClient) this.multiplayerClient.disconnect();
+      window.location.href = '/?mode=discover';
+    };
     appEl.appendChild(backBtn);
 
     await this.physicsManager.init();
@@ -144,6 +147,13 @@ export class GameClient {
     window.addEventListener('coins_added', (e) => {
       if (this.multiplayerClient && this.multiplayerClient.isConnected) {
         this.multiplayerClient.sendGoldUpdate(e.detail.amount);
+      }
+    });
+
+    // Graceful disconnect on tab close/reload
+    window.addEventListener('beforeunload', () => {
+      if (this.multiplayerClient) {
+        this.multiplayerClient.disconnect();
       }
     });
 
