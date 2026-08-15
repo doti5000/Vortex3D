@@ -131,8 +131,8 @@ export class GameClient {
     const curPos = [this.playerCharacter.group.position.x, Math.max(4.0, this.playerCharacter.group.position.y), this.playerCharacter.group.position.z];
     this.playerCharacter.initPhysics(curPos);
 
-    // Initialize Network
-    this.multiplayerClient = new MultiplayerClient();
+    // Re-initialize Network with arguments if overriding
+    this.multiplayerClient = new MultiplayerClient(this.renderer, this.physicsManager);
     
     // Convert active api base url to wss
     const activeApiUrl = getApiBaseUrl();
