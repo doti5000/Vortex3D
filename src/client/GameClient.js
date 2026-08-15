@@ -197,8 +197,13 @@ export class GameClient {
         
         ['shirt', 'pants', 'face', 'hat'].forEach(type => {
           if (user.equipped[type]) {
-            const asset = assets.find(a => a.id === user.equipped[type]);
-            if (asset) avatarConfig[type] = asset.textureUrl || asset.modelType;
+            const equippedIds = Array.isArray(user.equipped[type]) ? user.equipped[type] : [user.equipped[type]];
+            if (type === 'hat') {
+              avatarConfig.hat = equippedIds.map(id => assets.find(a => a.id === id)).filter(Boolean).map(a => a.modelType);
+            } else {
+              const asset = assets.find(a => a.id === equippedIds[0]);
+              if (asset) avatarConfig[type] = asset.textureUrl || asset.modelType;
+            }
           }
         });
         
@@ -321,13 +326,37 @@ export class GameClient {
   }
 
   syncTransformsFromPhysics() {
+    let frameHostUpdates = 0;
+    const myPeerId = this.multiplayerClient ? this.multiplayerClient.peerId : null;
+    const roomState = this.multiplayerClient && this.multiplayerClient.room ? this.multiplayerClient.room.state : null;
+
     for (const entity of this.sceneManager.entities.values()) {
-      if (entity.rigidBodyId && entity.rigidBody && entity.rigidBody.bodyType === 1) { 
+      if (entity.rigidBodyId !== undefined && entity.rigidBody && entity.rigidBody.bodyType === 1) { 
         const pos = this.physicsManager.getPosition(entity.rigidBodyId);
-        const rot = this.physicsManager.getRotation(entity.rigidBodyId);
+        const rotEuler = this.physicsManager.getRotation(entity.rigidBodyId);
         entity.transform.position = pos;
-        entity.transform.rotation = rot;
-        this.renderer.syncMeshTransform(entity.id, pos, rot);
+        entity.transform.rotation = rotEuler;
+        this.renderer.syncMeshTransform(entity.id, pos, rotEuler);
+        
+        if (myPeerId && roomState && roomState.entities) {
+           const networkEntity = roomState.entities.get(entity.id);
+           const ownerId = networkEntity ? networkEntity.ownerId : "";
+           
+           // Check if it's moving locally
+           const vel = this.physicsManager.getVelocity(entity.rigidBodyId);
+           const speedSq = vel[0]*vel[0] + vel[1]*vel[1] + vel[2]*vel[2];
+           
+           if (speedSq > 0.05 && ownerId !== myPeerId) {
+             // We bumped it, claim ownership
+             this.multiplayerClient.sendClaimEntity(entity.id);
+           }
+           
+           if (ownerId === myPeerId && frameHostUpdates < 30) {
+             const rotQuat = this.physicsManager.getRotationQuat(entity.rigidBodyId);
+             this.multiplayerClient.sendEntityUpdate(entity.id, pos[0], pos[1], pos[2], rotQuat[0], rotQuat[1], rotQuat[2], rotQuat[3]);
+             frameHostUpdates++;
+           }
+        }
       }
     }
   }

@@ -151,10 +151,10 @@ export class Character {
     this.scene.scene.add(this.group);
   }
 
-  initPhysics(position) {
+  initPhysics(position, isKinematic = false) {
     this.rigidBodyId = this.physicsManager.createRigidBody({
       entityId: this.id,
-      bodyType: 1, // Dynamic
+      bodyType: isKinematic ? 2 : 1, // 2 = KinematicPositionBased, 1 = Dynamic
       shapeType: 0, // Box
       position: position,
       extents: [2.0 * this.humanoid.sizeScale, 5.2 * this.humanoid.sizeScale, 1.2 * this.humanoid.sizeScale],

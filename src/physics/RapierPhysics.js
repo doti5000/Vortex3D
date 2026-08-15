@@ -140,6 +140,12 @@ export class RapierPhysics {
     rigidBody.setTranslation({ x, y, z }, true);
   }
 
+  setRotationQuat(wasmBodyId, x, y, z, w) {
+    if (!this.isInitialized || !this.bodyMap.has(wasmBodyId)) return;
+    const { rigidBody } = this.bodyMap.get(wasmBodyId);
+    rigidBody.setRotation({ x, y, z, w }, true);
+  }
+
   setRotation(wasmBodyId, rxDeg, ryDeg, rzDeg) {
     if (!this.isInitialized || !this.bodyMap.has(wasmBodyId)) return;
     const { rigidBody } = this.bodyMap.get(wasmBodyId);
@@ -180,6 +186,13 @@ export class RapierPhysics {
     const threeQ = new THREE.Quaternion(q.x, q.y, q.z, q.w);
     const euler = new THREE.Euler().setFromQuaternion(threeQ, 'XYZ');
     return [euler.x, euler.y, euler.z];
+  }
+
+  getRotationQuat(wasmBodyId) {
+    if (!this.isInitialized || !this.bodyMap.has(wasmBodyId)) return [0, 0, 0, 1];
+    const { rigidBody } = this.bodyMap.get(wasmBodyId);
+    const q = rigidBody.rotation();
+    return [q.x, q.y, q.z, q.w];
   }
 
   getBodyCount() {

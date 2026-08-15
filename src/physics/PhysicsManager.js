@@ -90,8 +90,27 @@ export class PhysicsManager {
     return [0, 0, 0];
   }
 
+  getRotationQuat(bodyId) {
+    if (this.currentEngine.getRotationQuat) {
+      return this.currentEngine.getRotationQuat(bodyId);
+    }
+    return [0, 0, 0, 1];
+  }
+
   onTelemetry(callback) {
     this.telemetryCallback = callback;
+  }
+
+  setPosition(bodyId, x, y, z) {
+    if (this.currentEngine.setPosition) {
+      this.currentEngine.setPosition(bodyId, x, y, z);
+    }
+  }
+
+  setRotationQuat(bodyId, x, y, z, w) {
+    if (this.currentEngine.setRotationQuat) {
+      this.currentEngine.setRotationQuat(bodyId, x, y, z, w);
+    }
   }
 
   step(dt = 1 / 60) {

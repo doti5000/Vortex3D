@@ -44,6 +44,30 @@ export class MultiplayerClient {
         }
       });
 
+      if (this.room.state.entities) {
+        const syncEntity = (entityState, id) => {
+          // If we own the entity, our local physics is driving it. Do NOT override.
+          if (entityState.ownerId === this.peerId) return; 
+          
+          if (this.physicsManager && this.scene && this.scene.entities) {
+            const entity = this.scene.entities.get(id);
+            if (entity && entity.rigidBodyId !== undefined) {
+              const rbId = entity.rigidBodyId;
+            
+            // If body exists, set position/rotation from server
+            if (rbId) {
+              this.physicsManager.setPosition(rbId, entityState.x, entityState.y, entityState.z);
+              this.physicsManager.setRotationQuat(rbId, entityState.rx, entityState.ry, entityState.rz, entityState.rw);
+            }
+          }
+        };
+
+        this.room.state.entities.onAdd((entityState, id) => {
+          syncEntity(entityState, id);
+          entityState.onChange(() => syncEntity(entityState, id));
+        });
+      }
+
       // Listen for remote players joining
       this.room.state.players.onAdd((player, sessionId) => {
         if (sessionId !== this.peerId) {
@@ -72,6 +96,7 @@ export class MultiplayerClient {
             avatarConfig: avatarConfig,
             skinColors: skinColors
           });
+          remoteChar.initPhysics([player.x, player.y, player.z], true); // true = isKinematic
           remoteChar.gold = player.gold || 0;
           this.remotePlayers.set(sessionId, remoteChar);
 
@@ -80,6 +105,9 @@ export class MultiplayerClient {
             if (remoteChar.group) {
               remoteChar.group.position.set(player.x, player.y, player.z);
               remoteChar.group.rotation.y = player.rotationY;
+              if (remoteChar.rigidBodyId !== undefined && this.physicsManager) {
+                this.physicsManager.setPosition(remoteChar.rigidBodyId, player.x, player.y, player.z);
+              }
               if (remoteChar.animator && player.state) {
                 remoteChar.humanoid.state = player.state;
                 remoteChar.animator.setState(player.state);
@@ -131,6 +159,19 @@ export class MultiplayerClient {
   sendChat(text) {
     if (!this.isConnected || !this.room) return;
     this.room.send("chat", text);
+  }
+
+  sendClaimEntity(entityId) {
+    if (!this.isConnected || !this.room) return;
+    this.room.send("claim_entity", entityId);
+  }
+
+  sendEntityUpdate(entityId, x, y, z, rx, ry, rz, rw) {
+    if (!this.isConnected || !this.room) return;
+    this.room.send("entity_update", {
+      id: entityId,
+      x, y, z, rx, ry, rz, rw
+    });
   }
 
   disconnect() {
