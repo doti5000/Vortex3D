@@ -1,4 +1,4 @@
-import { Room, Client } from 'colyseus';
+import { Room } from 'colyseus';
 import { Schema, MapSchema, type } from '@colyseus/schema';
 
 class PlayerState extends Schema {
