@@ -93,6 +93,16 @@ export class GameClient {
 
     this.rebuildPhysicsWorld();
 
+    if (this.sceneManager.entities.size === 0) {
+      console.log('Scene is empty. Generating default floor to prevent infinite falling.');
+      const floor = this.sceneManager.createEntity('Default Arena Floor');
+      floor.transform.position = [0, -1, 0];
+      floor.meshRenderer = { enabled: true, geometryType: 'box', color: '#1e293b', roughness: 0.7, metalness: 0.1, wireframe: false };
+      floor.rigidBody = { enabled: true, bodyType: 0, mass: 1, restitution: 0.5, friction: 0.5 };
+      floor.collider = { enabled: true, shapeType: 0, extents: [80, 2, 80], radius: 1 };
+      this.rebuildPhysicsWorld();
+    }
+
     // Spawn local player
     this.playerCharacter = new Character({
       id: 'player_local',

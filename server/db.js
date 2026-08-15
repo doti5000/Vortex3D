@@ -279,7 +279,10 @@ export async function getGames() {
   }
 
   const disk = getDiskDb();
-  return disk.games;
+  return disk.games.map(g => {
+    const u = disk.users.find(user => user.id === g.userId || user.id === g.user_id);
+    return { ...g, creator_name: u ? u.username : 'Unknown' };
+  });
 }
 
 export async function getGamesByUserId(userId) {
@@ -299,7 +302,10 @@ export async function getGamesByUserId(userId) {
   }
 
   const disk = getDiskDb();
-  return disk.games.filter(g => g.userId === userId);
+  return disk.games.filter(g => g.userId === userId || g.user_id === userId).map(g => {
+    const u = disk.users.find(user => user.id === g.userId || user.id === g.user_id);
+    return { ...g, creator_name: u ? u.username : 'Unknown' };
+  });
 }
 
 // Session Tracking
