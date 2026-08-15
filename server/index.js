@@ -8,7 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { initDb, createUser, findUserByUsername, findUserById, saveGame, getGames, getGamesByUserId, createSession, upsertPhrycoUser } from './db.js';
+import { initDb, createUser, findUserByUsername, findUserById, saveGame, getGames, getGamesByUserId, deleteGame, createSession, upsertPhrycoUser } from './db.js';
 import { VortexRoom } from './rooms/VortexRoom.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -274,6 +274,30 @@ app.post('/api/games/publish', async (req, res) => {
   } catch (err) {
     console.error('Publish Error:', err);
     res.status(500).json({ error: 'Failed to publish game.' });
+  }
+});
+
+// 5.5 Delete Game Endpoint
+app.delete('/api/games/:id', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'You must be logged in to delete games.' });
+
+    const token = authHeader.replace('Bearer ', '');
+    const userId = activeSessions.get(token);
+    if (!userId) return res.status(401).json({ error: 'Session expired or invalid.' });
+
+    const gameId = req.params.id;
+    const success = await deleteGame(gameId, userId);
+    
+    if (success) {
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: 'Game not found or unauthorized.' });
+    }
+  } catch (err) {
+    console.error('Delete Error:', err);
+    res.status(500).json({ error: 'Failed to delete game.' });
   }
 });
 

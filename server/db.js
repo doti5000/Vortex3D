@@ -263,6 +263,26 @@ export async function saveGame(game) {
   return game;
 }
 
+export async function deleteGame(gameId, userId) {
+  if (usePostgres && pool) {
+    try {
+      const res = await pool.query('DELETE FROM games WHERE id = $1 AND user_id = $2 RETURNING id', [gameId, userId]);
+      return res.rowCount > 0;
+    } catch (err) {
+      console.warn('PG deleteGame error:', err.message);
+    }
+  }
+
+  const disk = getDiskDb();
+  const initialLength = disk.games.length;
+  disk.games = disk.games.filter(g => !(g.id === gameId && (g.userId === userId || g.user_id === userId)));
+  if (disk.games.length < initialLength) {
+    saveDiskDb(disk);
+    return true;
+  }
+  return false;
+}
+
 export async function getGames() {
   if (usePostgres && pool) {
     try {

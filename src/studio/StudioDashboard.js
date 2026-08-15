@@ -117,6 +117,7 @@ export class StudioDashboard {
             border: 1px solid #334155;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
           `;
           card.onmouseover = () => {
             card.style.transform = 'translateY(-4px)';
@@ -153,8 +154,53 @@ export class StudioDashboard {
           
           content.appendChild(name);
           content.appendChild(desc);
+          
+          const deleteBtn = document.createElement('button');
+          deleteBtn.innerHTML = '🗑️ Delete';
+          deleteBtn.style.cssText = `
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(220, 38, 38, 0.9);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s, background 0.2s;
+          `;
+          deleteBtn.onmouseover = () => deleteBtn.style.background = 'rgba(239, 68, 68, 1)';
+          deleteBtn.onmouseout = () => deleteBtn.style.background = 'rgba(220, 38, 38, 0.9)';
+          deleteBtn.onclick = async (e) => {
+            e.stopPropagation(); // Prevent opening the editor
+            const confirmDelete = confirm(`Are you sure you want to delete and unpublish "${game.title}"? This action cannot be undone.`);
+            if (!confirmDelete) return;
+            
+            try {
+              const delRes = await fetch(`${getApiBaseUrl()}/api/games/${game.id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (delRes.ok) {
+                card.remove(); // Remove from UI instantly
+              } else {
+                alert('Failed to delete workspace. Please try again.');
+              }
+            } catch (err) {
+              alert('Error deleting workspace.');
+            }
+          };
+          
           card.appendChild(thumb);
           card.appendChild(content);
+          card.appendChild(deleteBtn);
+          
+          // Show delete button on hover
+          card.addEventListener('mouseover', () => deleteBtn.style.opacity = '1');
+          card.addEventListener('mouseout', () => deleteBtn.style.opacity = '0');
           
           grid.appendChild(card);
         });
