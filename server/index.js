@@ -120,6 +120,13 @@ app.post('/api/auth/login', async (req, res) => {
 
     const token = 'tok_' + crypto.randomBytes(16).toString('hex');
 
+    await createSession({
+      id: 'sess_' + crypto.randomBytes(8).toString('hex'),
+      userId: user.id,
+      token,
+      tunnelUrl: null
+    });
+
     res.json({
       success: true,
       token,
