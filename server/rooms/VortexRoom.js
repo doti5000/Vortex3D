@@ -10,8 +10,8 @@ class PlayerState extends Schema {
     this.state = "idle";
     this.x = 0;
     this.y = 5;
-    this.z = 0;
     this.rotationY = 0;
+    this.gold = 0;
   }
 }
 
@@ -22,6 +22,7 @@ type("number")(PlayerState.prototype, "x");
 type("number")(PlayerState.prototype, "y");
 type("number")(PlayerState.prototype, "z");
 type("number")(PlayerState.prototype, "rotationY");
+type("number")(PlayerState.prototype, "gold");
 
 class VortexState extends Schema {
   constructor() {
@@ -38,13 +39,20 @@ export class VortexRoom extends Room {
     this.setState(new VortexState());
     
     this.onMessage("player_update", (client, data) => {
-      const player = this.state.players.get(client.sessionId);
-      if (player) {
-        player.state = data.state;
-        player.x = data.x;
-        player.y = data.y;
-        player.z = data.z;
-        player.rotationY = data.rotationY;
+      const p = this.state.players.get(client.sessionId);
+      if (p) {
+        p.x = data.x;
+        p.y = data.y;
+        p.z = data.z;
+        p.rotationY = data.rotationY;
+        p.state = data.state;
+      }
+    });
+
+    this.onMessage("add_gold", (client, amount) => {
+      const p = this.state.players.get(client.sessionId);
+      if (p && typeof amount === 'number') {
+        p.gold += amount;
       }
     });
   }

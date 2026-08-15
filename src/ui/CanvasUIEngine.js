@@ -22,7 +22,6 @@ export class CanvasUIEngine {
 
     this.coins = 0;
     this.playerName = 'Player 1';
-    this.rank = '#1';
     this.damageTimer = 0;
     this.activeDamageText = null;
 
@@ -38,6 +37,7 @@ export class CanvasUIEngine {
 
   addCoins(amount = 1) {
     this.coins += amount;
+    window.dispatchEvent(new CustomEvent('coins_added', { detail: { amount } }));
   }
 
   triggerDamageNotice(amount, pos3D) {
@@ -91,8 +91,8 @@ export class CanvasUIEngine {
     ctx.fillStyle = '#f8fafc';
     ctx.font = '600 13px "Inter", sans-serif';
     ctx.fillText(this.playerName, x + 14, currentY);
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillText(this.rank, x + width - 40, currentY);
+    ctx.fillStyle = '#fbbf24';
+    ctx.fillText(`🪙 ${this.coins}`, x + width - 50, currentY);
     currentY += rowHeight;
 
     // Remote Players
@@ -100,6 +100,8 @@ export class CanvasUIEngine {
       ctx.fillStyle = '#cbd5e1';
       ctx.font = '500 13px "Inter", sans-serif';
       ctx.fillText(remotePlayers[i].name, x + 14, currentY);
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillText(`🪙 ${remotePlayers[i].gold || 0}`, x + width - 50, currentY);
       currentY += rowHeight;
     }
 

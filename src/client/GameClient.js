@@ -140,6 +140,13 @@ export class GameClient {
     
     await this.multiplayerClient.connect(serverUrl, this.gameId, this.playerCharacter);
 
+    // Sync coins to server
+    window.addEventListener('coins_added', (e) => {
+      if (this.multiplayerClient && this.multiplayerClient.isConnected) {
+        this.multiplayerClient.sendGoldUpdate(e.detail.amount);
+      }
+    });
+
     // Start simulation right away for client
     this.startSimulation();
   }

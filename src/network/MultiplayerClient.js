@@ -40,6 +40,11 @@ export class MultiplayerClient {
       // Listen for remote players joining
       this.room.state.players.onAdd((player, sessionId) => {
         if (sessionId !== this.peerId) {
+          if (this.remotePlayers.has(sessionId)) {
+            this.remotePlayers.get(sessionId).destroy();
+            this.remotePlayers.delete(sessionId);
+          }
+
           const remoteChar = new Character({
             id: sessionId,
             name: player.username || player.id || 'Remote Player',
@@ -48,6 +53,7 @@ export class MultiplayerClient {
             physicsManager: this.physicsManager,
             isLocalPlayer: false
           });
+          remoteChar.gold = player.gold || 0;
           this.remotePlayers.set(sessionId, remoteChar);
 
           // Listen for state changes (movement, animation)
@@ -58,6 +64,9 @@ export class MultiplayerClient {
               if (remoteChar.animator && player.state) {
                 remoteChar.humanoid.state = player.state;
                 remoteChar.animator.setState(player.state);
+              }
+              if (player.gold !== undefined) {
+                remoteChar.gold = player.gold;
               }
             }
           });
@@ -93,6 +102,11 @@ export class MultiplayerClient {
       rotationY: rotY,
       state: localCharacter.humanoid.state
     });
+  }
+
+  sendGoldUpdate(amount) {
+    if (!this.isConnected || !this.room) return;
+    this.room.send("add_gold", amount);
   }
 
   disconnect() {
