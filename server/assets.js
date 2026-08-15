@@ -6,7 +6,7 @@ export const SHOP_ASSETS = [
     name: "Classic Red Shirt",
     description: "A bright red shirt to stand out.",
     price: 15,
-    textureUrl: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/uv_grid_opengl.jpg"
+    textureUrl: "/textures/classic-red-shirt-texture.png"
   },
   {
     id: "asset_classic_blue_shirt",
@@ -14,23 +14,23 @@ export const SHOP_ASSETS = [
     name: "Classic Blue Shirt",
     description: "A sleek blue shirt.",
     price: 15,
-    textureUrl: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/crate.gif"
+    textureUrl: "/textures/classic-shirt-texture-1.png"
   },
   {
     id: "asset_cool_shades",
-    type: "face",
+    type: "hat",
     name: "Cool Shades",
     description: "Block out the haters.",
     price: 50,
-    textureUrl: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/decals/decal-diffuse.png"
+    modelType: "shades"
   },
   {
-    id: "asset_gold_chain",
-    type: "shirt",
-    name: "Gold Chain Shirt",
-    description: "Show off your Vorbucks.",
-    price: 250,
-    textureUrl: "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_atmos_2048.jpg"
+    id: "asset_classic_face",
+    type: "face",
+    name: "Classic Smile",
+    description: "The classic smile.",
+    price: 25,
+    textureUrl: "/textures/classic-face-texture.png"
   },
   {
     id: "asset_fancy_fedora",

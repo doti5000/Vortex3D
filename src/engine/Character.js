@@ -19,7 +19,7 @@ export class Character {
       rightLeg: '#4ade80'
     },
     avatarConfig = {},
-    hatType = 'fedora',
+    hatType = 'none',
     scene,
     physicsManager,
     isLocalPlayer = true

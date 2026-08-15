@@ -29,6 +29,34 @@ export class HatMeshManager {
       const band = new THREE.Mesh(bandGeo, bandMat);
       band.position.y = 0.72;
       hatGroup.add(band);
+    } else if (hatType === 'shades') {
+      // Cool 3D Black Sunglasses
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1, metalness: 0.8 });
+      const glassMat = new THREE.MeshPhysicalMaterial({ color: 0x000000, roughness: 0.0, transmission: 0.5, thickness: 0.1 });
+      
+      const lensGeo = new THREE.BoxGeometry(0.5, 0.3, 0.05);
+      
+      const leftLens = new THREE.Mesh(lensGeo, glassMat);
+      leftLens.position.set(-0.3, 0.2, 0.62);
+      hatGroup.add(leftLens);
+
+      const rightLens = new THREE.Mesh(lensGeo, glassMat);
+      rightLens.position.set(0.3, 0.2, 0.62);
+      hatGroup.add(rightLens);
+
+      const bridgeGeo = new THREE.BoxGeometry(0.2, 0.05, 0.05);
+      const bridge = new THREE.Mesh(bridgeGeo, frameMat);
+      bridge.position.set(0, 0.25, 0.62);
+      hatGroup.add(bridge);
+
+      const sideGeo = new THREE.BoxGeometry(0.05, 0.05, 0.7);
+      const leftSide = new THREE.Mesh(sideGeo, frameMat);
+      leftSide.position.set(-0.55, 0.25, 0.3);
+      hatGroup.add(leftSide);
+
+      const rightSide = new THREE.Mesh(sideGeo, frameMat);
+      rightSide.position.set(0.55, 0.25, 0.3);
+      hatGroup.add(rightSide);
     } else if (hatType === 'wizard') {
       // Wizard Hat
       const brimGeo = new THREE.CylinderGeometry(1.3, 1.3, 0.08, 24);
