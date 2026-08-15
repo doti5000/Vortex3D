@@ -24,6 +24,7 @@ export class CanvasUIEngine {
     this.playerName = 'Player 1';
     this.damageTimer = 0;
     this.activeDamageText = null;
+    this.chatBubbles = new Map(); // playerId -> { text, timer }
 
     this.onResize();
     window.addEventListener('resize', () => this.onResize());
@@ -38,6 +39,10 @@ export class CanvasUIEngine {
   addCoins(amount = 1) {
     this.coins += amount;
     window.dispatchEvent(new CustomEvent('coins_added', { detail: { amount } }));
+  }
+
+  addChatBubble(playerId, text) {
+    this.chatBubbles.set(playerId, { text, timer: 5.0 }); // Show for 5 seconds
   }
 
   triggerDamageNotice(amount, pos3D) {
@@ -58,6 +63,20 @@ export class CanvasUIEngine {
     // 2. Render Overhead Canvas Health Bar & Damage Floating Text
     if (character) {
       this.renderOverheadHealthBar(character);
+      this.renderChatBubble(character, true);
+    }
+    
+    // 3. Render remote player Chat Bubbles
+    for (const rp of remotePlayers) {
+      this.renderChatBubble(rp, false);
+    }
+
+    // Update timers
+    for (const [id, bubble] of this.chatBubbles.entries()) {
+      bubble.timer -= dt;
+      if (bubble.timer <= 0) {
+        this.chatBubbles.delete(id);
+      }
     }
   }
 
@@ -119,7 +138,7 @@ export class CanvasUIEngine {
     const ctx = this.ctx;
     const worldPos = new THREE.Vector3();
     character.group.getWorldPosition(worldPos);
-    worldPos.y += 2.4; // 2.4 units above avatar head
+    worldPos.y += 3.5; // Lifted up to avoid covering the face
 
     // Project 3D world position to 2D canvas screen space
     const screenVec = worldPos.clone().project(this.renderer.camera);
@@ -171,6 +190,58 @@ export class CanvasUIEngine {
     ctx.font = '700 10px "Fira Code", monospace';
     ctx.textAlign = 'center';
     ctx.fillText(`${Math.round(character.humanoid.health)} HP`, screenX, barY - 4);
+
+    ctx.restore();
+  }
+
+  renderChatBubble(character, isLocal) {
+    if (!character || !character.group) return;
+    const bubble = this.chatBubbles.get(character.id);
+    if (!bubble) return;
+
+    const ctx = this.ctx;
+    const worldPos = new THREE.Vector3();
+    character.group.getWorldPosition(worldPos);
+    worldPos.y += 4.5; // Above the HP bar
+
+    const screenVec = worldPos.clone().project(this.renderer.camera);
+    if (screenVec.z > 1) return;
+
+    const screenX = (screenVec.x * 0.5 + 0.5) * this.canvas.width;
+    const screenY = (-(screenVec.y * 0.5) + 0.5) * this.canvas.height;
+
+    ctx.save();
+    ctx.font = '600 13px "Inter", sans-serif';
+    
+    // Bubble padding and sizing
+    const textWidth = ctx.measureText(bubble.text).width;
+    const paddingX = 12;
+    const paddingY = 8;
+    const bubbleWidth = textWidth + paddingX * 2;
+    const bubbleHeight = 13 + paddingY * 2; // ~13px font height
+    const bubbleX = screenX - bubbleWidth / 2;
+    const bubbleY = screenY - bubbleHeight;
+
+    // Background
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Little tail pointing down
+    ctx.beginPath();
+    ctx.moveTo(screenX - 5, bubbleY + bubbleHeight);
+    ctx.lineTo(screenX + 5, bubbleY + bubbleHeight);
+    ctx.lineTo(screenX, bubbleY + bubbleHeight + 6);
+    ctx.fill();
+
+    // Text
+    ctx.fillStyle = '#000000';
+    ctx.textAlign = 'center';
+    ctx.fillText(bubble.text, screenX, bubbleY + 18); // manual vertical alignment
 
     ctx.restore();
   }

@@ -60,6 +60,16 @@ export class AvatarPage {
           <button id="btn-back" class="btn btn-secondary" style="padding: 10px 20px;">Exit Avatar Editor</button>
         </div>
 
+        ${!localStorage.getItem('vortex3d_token') ? `
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+          <div style="background: #1f2937; padding: 40px; border-radius: 16px; text-align: center; max-width: 400px; border: 1px solid var(--border);">
+            <h2 style="margin-top: 0; color: #ef4444;">Guest Mode</h2>
+            <p style="color: var(--text-dim); margin-bottom: 24px;">Guests cannot customize avatars. Please sign in via the portal.</p>
+            <button onclick="window.location.href='/'" class="btn btn-primary" style="width: 100%; padding: 12px;">Return to Portal</button>
+          </div>
+        </div>
+        ` : ''}
+
         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
           <input type="text" id="avatar-search" placeholder="Search owned items..." style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white;">
         </div>
@@ -103,7 +113,13 @@ export class AvatarPage {
     }
 
     ownedAssets.forEach(asset => {
-      const isEquipped = this.user.equipped && Object.values(this.user.equipped).includes(asset.id);
+      let isEquipped = false;
+      if (this.user.equipped && Array.isArray(this.user.equipped[asset.type])) {
+        isEquipped = this.user.equipped[asset.type].includes(asset.id);
+      } else if (this.user.equipped) {
+        // Fallback for older string format
+        isEquipped = Object.values(this.user.equipped).includes(asset.id);
+      }
       
       const itemEl = document.createElement('div');
       itemEl.style.background = 'rgba(255,255,255,0.05)';
@@ -211,8 +227,14 @@ export class AvatarPage {
     if (this.user && this.user.equipped) {
       ['shirt', 'pants', 'face', 'hat'].forEach(type => {
         if (this.user.equipped[type]) {
-          const asset = this.assets.find(a => a.id === this.user.equipped[type]);
-          if (asset) avatarConfig[type] = asset.textureUrl || asset.modelType;
+          const equippedIds = Array.isArray(this.user.equipped[type]) ? this.user.equipped[type] : [this.user.equipped[type]];
+          if (type === 'hat') {
+            avatarConfig.hat = equippedIds.map(id => this.assets.find(a => a.id === id)).filter(Boolean).map(a => a.modelType);
+          } else {
+            // For other types, just use the first item (max 1)
+            const asset = this.assets.find(a => a.id === equippedIds[0]);
+            if (asset) avatarConfig[type] = asset.textureUrl || asset.modelType;
+          }
         }
       });
     }

@@ -11,6 +11,7 @@ export class MultiplayerClient {
     this.remotePlayers = new Map(); // sessionId -> Character
     this.isConnected = false;
     this.onStatusChange = null;
+    this.onChatMessage = null;
   }
 
   /**
@@ -36,6 +37,12 @@ export class MultiplayerClient {
       console.log(`Connected to Colyseus Room ${this.room.name} with Session ID: ${this.room.sessionId}`);
 
       if (this.onStatusChange) this.onStatusChange(true);
+
+      this.room.onMessage("chat_broadcast", (data) => {
+        if (this.onChatMessage) {
+          this.onChatMessage(data);
+        }
+      });
 
       // Listen for remote players joining
       this.room.state.players.onAdd((player, sessionId) => {
@@ -119,6 +126,11 @@ export class MultiplayerClient {
   sendGoldUpdate(amount) {
     if (!this.isConnected || !this.room) return;
     this.room.send("add_gold", amount);
+  }
+
+  sendChat(text) {
+    if (!this.isConnected || !this.room) return;
+    this.room.send("chat", text);
   }
 
   disconnect() {

@@ -56,6 +56,18 @@ export class VortexRoom extends Room {
         p.gold += amount;
       }
     });
+
+    this.onMessage("chat", (client, text) => {
+      const p = this.state.players.get(client.sessionId);
+      if (p && typeof text === 'string' && text.trim().length > 0) {
+        this.broadcast("chat_broadcast", {
+          playerId: p.id,
+          username: p.username,
+          text: text.trim().substring(0, 200),
+          timestamp: Date.now()
+        });
+      }
+    });
   }
 
   onJoin(client, options) {

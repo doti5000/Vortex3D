@@ -134,6 +134,10 @@ export class GamesPortal {
     });
 
     this.container.querySelector('#btn-portal-publish').addEventListener('click', () => {
+      if (!localStorage.getItem('vortex3d_token')) {
+        alert('Guests cannot publish workspaces. Please sign in via the portal.');
+        return;
+      }
       this.onOpenPublisher();
     });
 

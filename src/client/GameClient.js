@@ -61,6 +61,80 @@ export class GameClient {
     };
     appEl.appendChild(backBtn);
 
+    // Chat UI
+    const isGuest = !localStorage.getItem('vortex3d_token');
+    
+    const chatContainer = document.createElement('div');
+    chatContainer.id = 'chat-container';
+    chatContainer.style.position = 'absolute';
+    chatContainer.style.top = '50px';
+    chatContainer.style.left = '10px';
+    chatContainer.style.width = '300px';
+    chatContainer.style.height = '250px';
+    chatContainer.style.zIndex = '1000';
+    chatContainer.style.display = 'flex';
+    chatContainer.style.flexDirection = 'column';
+    chatContainer.style.background = 'rgba(15, 23, 42, 0.6)';
+    chatContainer.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+    chatContainer.style.borderRadius = '8px';
+    chatContainer.style.overflow = 'hidden';
+    chatContainer.style.transition = 'height 0.2s';
+    
+    let chatMinimized = false;
+    
+    const chatHeader = document.createElement('div');
+    chatHeader.style.padding = '8px';
+    chatHeader.style.background = 'rgba(0,0,0,0.5)';
+    chatHeader.style.color = '#cbd5e1';
+    chatHeader.style.fontSize = '12px';
+    chatHeader.style.fontWeight = 'bold';
+    chatHeader.style.cursor = 'pointer';
+    chatHeader.style.display = 'flex';
+    chatHeader.style.justifyContent = 'space-between';
+    chatHeader.innerHTML = `<span>💬 Chat</span><span id="chat-toggle">▼</span>`;
+    chatHeader.onclick = () => {
+      chatMinimized = !chatMinimized;
+      chatContainer.style.height = chatMinimized ? '34px' : '250px';
+      chatHeader.querySelector('#chat-toggle').textContent = chatMinimized ? '▲' : '▼';
+    };
+    
+    const chatLog = document.createElement('div');
+    chatLog.id = 'chat-log';
+    chatLog.style.flex = '1';
+    chatLog.style.padding = '8px';
+    chatLog.style.overflowY = 'auto';
+    chatLog.style.color = '#f8fafc';
+    chatLog.style.fontSize = '13px';
+    chatLog.style.display = 'flex';
+    chatLog.style.flexDirection = 'column';
+    chatLog.style.gap = '4px';
+    
+    const chatInput = document.createElement('input');
+    chatInput.type = 'text';
+    chatInput.placeholder = isGuest ? "Guests cannot chat. Please sign in." : "Press Enter to chat...";
+    chatInput.disabled = isGuest;
+    chatInput.style.padding = '8px';
+    chatInput.style.border = 'none';
+    chatInput.style.borderTop = '1px solid rgba(255,255,255,0.1)';
+    chatInput.style.background = 'rgba(0,0,0,0.4)';
+    chatInput.style.color = '#fff';
+    chatInput.style.outline = 'none';
+    
+    chatInput.addEventListener('keydown', (e) => {
+      // Prevent WASD keys from moving the character while typing
+      e.stopPropagation();
+      if (e.key === 'Enter' && chatInput.value.trim().length > 0 && this.multiplayerClient) {
+        this.multiplayerClient.sendChat(chatInput.value.trim());
+        chatInput.value = '';
+      }
+    });
+
+    chatContainer.appendChild(chatHeader);
+    chatContainer.appendChild(chatLog);
+    chatContainer.appendChild(chatInput);
+    appEl.appendChild(chatContainer);
+    this.chatLog = chatLog;
+
     await this.physicsManager.init();
     await this.luauVM.init();
 
@@ -162,6 +236,19 @@ export class GameClient {
 
     // Re-initialize Network with arguments if overriding
     this.multiplayerClient = new MultiplayerClient(this.renderer, this.physicsManager);
+    
+    this.multiplayerClient.onChatMessage = (msg) => {
+      // Append to DOM chat log
+      const msgEl = document.createElement('div');
+      msgEl.innerHTML = `<span style="font-weight: bold; color: #a855f7;">${msg.username}:</span> <span style="word-break: break-word;">${msg.text}</span>`;
+      this.chatLog.appendChild(msgEl);
+      this.chatLog.scrollTop = this.chatLog.scrollHeight;
+      
+      // Tell CanvasUIEngine to show overhead bubble
+      if (this.canvasUI) {
+        this.canvasUI.addChatBubble(msg.playerId, msg.text);
+      }
+    };
     
     // Convert active api base url to wss
     const activeApiUrl = getApiBaseUrl();

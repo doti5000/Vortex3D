@@ -58,8 +58,18 @@ export class ShopPage {
       </div>
 
       <div style="padding: 20px 40px; display: flex; gap: 20px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border);">
-        <input type="text" id="shop-search" placeholder="Search for hats, shirts, pants..." style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white;">
+        <input type="text" id="shop-search" class="search-input" placeholder="🔍 Search assets..." style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: white;" value="${this.searchQuery}">
       </div>
+
+      ${!localStorage.getItem('vortex3d_token') ? `
+      <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+        <div style="background: #1f2937; padding: 40px; border-radius: 16px; text-align: center; max-width: 400px; border: 1px solid var(--border);">
+          <h2 style="margin-top: 0; color: #ef4444;">Guest Mode</h2>
+          <p style="color: var(--text-dim); margin-bottom: 24px;">Guests cannot buy assets. Please sign in via the portal.</p>
+          <button id="btn-portal" class="btn btn-primary" style="width: 100%; padding: 12px;">Return to Portal</button>
+        </div>
+      </div>
+      ` : ''}
 
       <div style="flex: 1; padding: 40px; overflow-y: auto;">
         <div id="shop-items-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px;">
@@ -71,6 +81,11 @@ export class ShopPage {
     this.container.querySelector('#btn-back').onclick = () => {
       window.location.href = '/?mode=discover';
     };
+
+    const btnPortal = this.container.querySelector('#btn-portal');
+    if (btnPortal) {
+      btnPortal.onclick = () => { window.location.href = '/'; };
+    }
 
     const searchInput = this.container.querySelector('#shop-search');
     searchInput.addEventListener('input', () => {

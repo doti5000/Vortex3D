@@ -28,7 +28,7 @@ export class Character {
     this.name = name;
     this.skinColors = skinColors;
     this.avatarConfig = avatarConfig;
-    this.hatType = this.avatarConfig.hat || hatType;
+    this.hatTypes = this.avatarConfig.hat || hatType;
     this.scene = scene;
     this.physicsManager = physicsManager;
     this.isLocalPlayer = isLocalPlayer;
@@ -98,7 +98,7 @@ export class Character {
     this.parts.skinMat = headSkinMat;
 
     // Attach 3D Hat Mesh
-    this.setHat(this.hatType);
+    this.setHat(this.hatTypes);
 
     // 2. Torso (2.0 x 2.0 x 1.0)
     const torsoGeo = new THREE.BoxGeometry(2.0, 2.0, 1.0);
@@ -165,14 +165,21 @@ export class Character {
     });
   }
 
-  setHat(hatType) {
-    this.hatType = hatType;
+  setHat(hatTypes) {
+    this.hatTypes = Array.isArray(hatTypes) ? hatTypes : (hatTypes ? [hatTypes] : []);
     if (this.hatGroup) {
       this.parts.head.remove(this.hatGroup);
       this.hatGroup = null;
     }
-    if (hatType && hatType !== 'none') {
-      this.hatGroup = HatMeshManager.createHat(hatType);
+    
+    if (this.hatTypes.length > 0) {
+      this.hatGroup = new THREE.Group();
+      this.hatTypes.forEach(t => {
+        if (t !== 'none') {
+           const h = HatMeshManager.createHat(t);
+           this.hatGroup.add(h);
+        }
+      });
       this.parts.head.add(this.hatGroup);
     }
   }

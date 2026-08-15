@@ -292,12 +292,29 @@ app.post('/api/avatar/equip', async (req, res) => {
     if (!unequip && !inv.includes(assetId)) {
       return res.status(403).json({ error: 'You do not own this asset.' });
     }
+    
+    if (!equipped[type]) {
+      equipped[type] = [];
+    } else if (!Array.isArray(equipped[type])) {
+      // Migrate old string-based equipped state
+      equipped[type] = [equipped[type]];
+    }
 
     if (unequip) {
-      delete equipped[type];
+      equipped[type] = equipped[type].filter(id => id !== assetId);
     } else {
-      equipped[type] = assetId;
+      if (!equipped[type].includes(assetId)) {
+        equipped[type].push(assetId);
+      }
+      
+      const maxLimits = { hat: 2, shirt: 1, pants: 1, face: 1 };
+      const limit = maxLimits[type] || 1;
+      
+      while (equipped[type].length > limit) {
+        equipped[type].shift(); // Remove the oldest item
+      }
     }
+    
     user.equipped = equipped;
     
     await saveUser(user);
