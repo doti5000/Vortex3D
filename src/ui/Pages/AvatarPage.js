@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from '../../discover/DiscoverApp.js';
+import { getApiBaseUrl } from '../../network/api.js';
 import * as THREE from 'three';
 import { Character } from '../../engine/Character.js';
 

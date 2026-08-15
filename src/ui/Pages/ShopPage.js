@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from '../../discover/DiscoverApp.js';
+import { getApiBaseUrl } from '../../network/api.js';
 
 export class ShopPage {
   constructor() {
