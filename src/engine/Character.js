@@ -28,7 +28,7 @@ export class Character {
     this.name = name;
     this.skinColors = skinColors;
     this.avatarConfig = avatarConfig;
-    this.hatType = hatType;
+    this.hatType = this.avatarConfig.hat || hatType;
     this.scene = scene;
     this.physicsManager = physicsManager;
     this.isLocalPlayer = isLocalPlayer;
