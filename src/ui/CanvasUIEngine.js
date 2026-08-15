@@ -48,12 +48,12 @@ export class CanvasUIEngine {
     };
   }
 
-  update(character, dt = 0.016) {
+  update(character, dt = 0.016, remotePlayers = []) {
     if (!this.ctx) return;
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
     // 1. Render Roblox-style Leaderboard & Leaderstats Overlay (Top Right)
-    this.renderLeaderboard();
+    this.renderLeaderboard(remotePlayers);
 
     // 2. Render Overhead Canvas Health Bar & Damage Floating Text
     if (character) {
@@ -61,12 +61,14 @@ export class CanvasUIEngine {
     }
   }
 
-  renderLeaderboard() {
+  renderLeaderboard(remotePlayers = []) {
     const ctx = this.ctx;
     const x = this.canvas.width - 220;
     const y = 20;
     const width = 200;
-    const height = 110;
+    const rowHeight = 30;
+    const headerHeight = 40;
+    const height = headerHeight + rowHeight + (remotePlayers.length * rowHeight) + 10;
 
     // Glassmorphism Leaderboard Card
     ctx.save();
@@ -83,19 +85,28 @@ export class CanvasUIEngine {
     ctx.font = '700 12px "Fira Code", monospace';
     ctx.fillText('🏆 LEADERBOARD', x + 14, y + 24);
 
-    // Player Row
+    let currentY = y + 50;
+
+    // Local Player Row
     ctx.fillStyle = '#f8fafc';
     ctx.font = '600 13px "Inter", sans-serif';
-    ctx.fillText(this.playerName, x + 14, y + 54);
+    ctx.fillText(this.playerName, x + 14, currentY);
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillText(this.rank, x + width - 40, currentY);
+    currentY += rowHeight;
 
-    // Coins Counter
+    // Remote Players
+    for (let i = 0; i < remotePlayers.length; i++) {
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = '500 13px "Inter", sans-serif';
+      ctx.fillText(remotePlayers[i].name, x + 14, currentY);
+      currentY += rowHeight;
+    }
+
+    // Coins Counter (Bottom of leaderboard)
     ctx.fillStyle = '#fbbf24';
     ctx.font = '700 13px "Fira Code", monospace';
-    ctx.fillText(`🪙 ${this.coins} Coins`, x + 14, y + 84);
-
-    // Rank Badge
-    ctx.fillStyle = '#38bdf8';
-    ctx.fillText(this.rank, x + width - 40, y + 54);
+    ctx.fillText(`🪙 ${this.coins} Coins`, x + 14, height + y + 20);
 
     ctx.restore();
   }

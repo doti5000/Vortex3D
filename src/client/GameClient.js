@@ -103,15 +103,29 @@ export class GameClient {
       this.rebuildPhysicsWorld();
     }
 
+    let user = null;
+    try {
+      const uStr = localStorage.getItem('vortex3d_user');
+      if (uStr) user = JSON.parse(uStr);
+    } catch (e) {}
+
+    const guestId = Math.floor(Math.random() * 9999);
+    const playerId = user ? user.id : 'guest_' + guestId;
+    const playerName = user ? user.username : 'Guest ' + guestId;
+
     // Spawn local player
     this.playerCharacter = new Character({
-      id: 'player_local',
-      name: 'Player 1',
+      id: playerId,
+      name: playerName,
       position: [0, 5, 0],
       scene: this.renderer,
       physicsManager: this.physicsManager,
       isLocalPlayer: true
     });
+    
+    if (this.canvasUI) {
+      this.canvasUI.playerName = playerName;
+    }
     
     // Setup initial character physics
     const curPos = [this.playerCharacter.group.position.x, Math.max(4.0, this.playerCharacter.group.position.y), this.playerCharacter.group.position.z];
@@ -227,7 +241,8 @@ export class GameClient {
       }
 
       if (this.canvasUI) {
-        this.canvasUI.update(this.playerCharacter, 0.016);
+        const remotePlayers = this.multiplayerClient ? Array.from(this.multiplayerClient.remotePlayers.values()) : [];
+        this.canvasUI.update(this.playerCharacter, 0.016, remotePlayers);
         this.checkTouchCollisions();
       }
 

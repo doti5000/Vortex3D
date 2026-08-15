@@ -42,7 +42,7 @@ export class MultiplayerClient {
         if (sessionId !== this.peerId) {
           const remoteChar = new Character({
             id: sessionId,
-            name: player.id || 'Remote Player',
+            name: player.username || player.id || 'Remote Player',
             position: [player.x, player.y, player.z],
             scene: this.scene,
             physicsManager: this.physicsManager,

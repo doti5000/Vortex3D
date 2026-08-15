@@ -5,6 +5,7 @@ class PlayerState extends Schema {
   constructor() {
     super();
     this.id = "";
+    this.username = "Unknown Player";
     this.state = "idle";
     this.x = 0;
     this.y = 5;
@@ -14,6 +15,7 @@ class PlayerState extends Schema {
 }
 
 type("string")(PlayerState.prototype, "id");
+type("string")(PlayerState.prototype, "username");
 type("string")(PlayerState.prototype, "state");
 type("number")(PlayerState.prototype, "x");
 type("number")(PlayerState.prototype, "y");
@@ -48,6 +50,7 @@ export class VortexRoom extends Room {
     console.log(`[VortexRoom] Client joined: ${client.sessionId}`);
     const player = new PlayerState();
     player.id = options.userId || client.sessionId;
+    player.username = options.username || "Guest";
     this.state.players.set(client.sessionId, player);
   }
 
