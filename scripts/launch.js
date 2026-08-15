@@ -64,25 +64,7 @@ if (fs.existsSync(pidsFile)) {
 
 console.log('✅ Ports 3000 & 3001 cleared.');
 
-// 1. Sync & Push Codebase to GitHub (doti5000/Vortex3D.git) for Vercel Deployment
-console.log('\n📦 Step 1: Staging & pushing codebase to GitHub for Vercel deployment (https://vortex3d.vercel.app/)...');
-try {
-  execSync('git add .', { cwd: projectRoot, stdio: 'ignore' });
-  try {
-    execSync('git commit -m "Expose Vite dev server on all network interfaces (0.0.0.0:3000)"', { cwd: projectRoot, stdio: 'ignore' });
-  } catch (e) {}
-  
-  execSync('git branch -M main', { cwd: projectRoot, stdio: 'ignore' });
-  try {
-    execSync('git push -u origin main', { cwd: projectRoot, stdio: 'inherit' });
-    console.log(`✅ Successfully pushed to GitHub. Vercel active at: ${VERCEL_PRODUCTION_DOMAIN}`);
-  } catch (pushErr) {
-    console.warn('⚠️ Push warning (local server continuing):', pushErr.message);
-  }
-} catch (err) {
-  console.warn('⚠️ Git commit step warning:', err.message);
-}
-
+// 1. (Moved to happen after Tunnel is resolved)
 // 2. Start Backend Express & WebSocket Server (Port 3001)
 console.log('\n🗄️ Step 2: Starting Node.js Express & WebSocket Backend Server (Port 3001)...');
 const serverProcess = spawn('node', ['server/index.js'], { cwd: projectRoot, stdio: 'inherit' });
@@ -180,6 +162,28 @@ function updateAllProjectFiles(url) {
         }
       } catch (e) {}
     }
+  }
+
+  // Create environment config file for Vite/Vercel
+  const envPath = path.join(projectRoot, 'src', 'network', 'env.js');
+  fs.writeFileSync(envPath, `export const ACTIVE_TUNNEL_URL = '${url}';\n`, 'utf8');
+  console.log(`   ✅ Wrote active tunnel to src/network/env.js`);
+
+  // Push to GitHub for Vercel
+  console.log(`\n📦 Staging & pushing dynamically linked Cloudflare URL to GitHub for Vercel deployment...`);
+  try {
+    execSync('git add .', { cwd: projectRoot, stdio: 'ignore' });
+    try {
+      execSync(`git commit -m "Automated Vercel Sync - Active Tunnel: ${url}"`, { cwd: projectRoot, stdio: 'ignore' });
+    } catch (e) {}
+    try {
+      execSync('git push -u origin main --force', { cwd: projectRoot, stdio: 'inherit' });
+      console.log(`✅ Successfully pushed to GitHub. Vercel active at: ${VERCEL_PRODUCTION_DOMAIN}`);
+    } catch (pushErr) {
+      console.warn('⚠️ Push warning (local server continuing):', pushErr.message);
+    }
+  } catch (err) {
+    console.warn('⚠️ Git commit step warning:', err.message);
   }
 }
 

@@ -1,4 +1,5 @@
 // Dynamic API Base URL resolver for Localhost & Vercel Production (https://vortex3d.vercel.app)
+import { ACTIVE_TUNNEL_URL } from './env.js';
 
 let cachedTunnelUrl = null;
 
@@ -12,6 +13,9 @@ export function getApiBaseUrl() {
 
   // If running on Vercel production (https://vortex3d.vercel.app), use active Cloudflare Tunnel URL or relative path
   if (cachedTunnelUrl) return cachedTunnelUrl;
+
+  if (ACTIVE_TUNNEL_URL) return ACTIVE_TUNNEL_URL;
+
   return window.location.origin;
 }
 
