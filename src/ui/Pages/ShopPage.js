@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '../../network/api.js';
+import { ThumbnailGenerator } from '../../engine/ThumbnailGenerator.js';
 
 export class ShopPage {
   constructor() {
@@ -108,7 +109,7 @@ export class ShopPage {
 
       itemEl.innerHTML = `
         <div style="width: 120px; height: 120px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 16px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-           ${asset.textureUrl ? `<img src="${asset.textureUrl}" style="width: 100%; height: 100%; object-fit: cover;">` : `<div style="font-size: 3rem;">🎩</div>`}
+           <img id="thumb-${asset.id}" style="width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.3s;" />
         </div>
         <div style="font-weight: 600; font-size: 1.1rem; text-align: center; margin-bottom: 4px;">${asset.name}</div>
         <div style="font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px;">${asset.type}</div>
@@ -128,6 +129,14 @@ export class ShopPage {
         itemEl.querySelector('.btn-buy').onclick = () => this.buyItem(asset);
       }
       grid.appendChild(itemEl);
+
+      ThumbnailGenerator.generateThumbnail(asset).then(url => {
+        const img = itemEl.querySelector(`#thumb-${asset.id}`);
+        if (img) {
+          img.src = url;
+          img.style.opacity = '1';
+        }
+      });
     });
   }
 

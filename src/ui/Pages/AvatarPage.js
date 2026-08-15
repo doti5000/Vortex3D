@@ -1,6 +1,7 @@
 import { getApiBaseUrl } from '../../network/api.js';
 import * as THREE from 'three';
 import { Character } from '../../engine/Character.js';
+import { ThumbnailGenerator } from '../../engine/ThumbnailGenerator.js';
 
 export class AvatarPage {
   constructor() {
@@ -115,7 +116,7 @@ export class AvatarPage {
 
       itemEl.innerHTML = `
         <div style="width: 80px; height: 80px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-           ${asset.textureUrl ? `<img src="${asset.textureUrl}" style="width: 100%; height: 100%; object-fit: cover;">` : `<div style="font-size: 2rem;">🎩</div>`}
+           <img id="thumb-${asset.id}" style="width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.3s;" />
         </div>
         <div style="font-weight: 600; font-size: 0.9rem; text-align: center; margin-bottom: 4px;">${asset.name}</div>
         <div style="font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 12px;">${asset.type}</div>
@@ -126,6 +127,14 @@ export class AvatarPage {
 
       itemEl.querySelector('button').onclick = () => this.equipItem(asset, isEquipped);
       grid.appendChild(itemEl);
+
+      ThumbnailGenerator.generateThumbnail(asset).then(url => {
+        const img = itemEl.querySelector(`#thumb-${asset.id}`);
+        if (img) {
+          img.src = url;
+          img.style.opacity = '1';
+        }
+      });
     });
   }
 
@@ -208,14 +217,19 @@ export class AvatarPage {
       });
     }
 
+    let skinColors = undefined;
+    if (this.user && this.user.skinColors && Object.keys(this.user.skinColors).length > 0) {
+      skinColors = this.user.skinColors;
+    }
+
     this.character = new Character({
       id: 'preview',
       position: [0, 0, 0],
-      scene: this.scene,
-      physicsManager: { addRigidBody: () => {}, removeRigidBody: () => {} },
+      scene: { scene: this.scene }, // Mock Renderer structure
+      physicsManager: { createRigidBody: () => null, removeRigidBody: () => {} },
       isLocalPlayer: false,
       avatarConfig: avatarConfig,
-      skinColors: this.user && this.user.skinColors ? this.user.skinColors : undefined
+      skinColors: skinColors
     });
     
     // Remove physics constraints for preview
