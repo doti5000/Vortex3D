@@ -31,6 +31,8 @@ class VortexState extends Schema {
 type({ map: PlayerState })(VortexState.prototype, "players");
 
 export class VortexRoom extends Room {
+  maxClients = 8;
+
   onCreate(options) {
     this.setState(new VortexState());
     

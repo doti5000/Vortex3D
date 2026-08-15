@@ -11,27 +11,7 @@ import { fileURLToPath } from 'url';
 import { initDb, createUser, findUserByUsername, findUserById, saveGame, getGames, getGamesByUserId, deleteGame, createSession, findSessionByToken, upsertPhrycoUser } from './db.js';
 import { VortexRoom } from './rooms/VortexRoom.js';
 
-// --- Patch Colyseus 0.17 MatchMaker for colyseus.js 0.16 compatibility ---
-const originalInvokeMethod = matchMaker.controller.invokeMethod.bind(matchMaker.controller);
-matchMaker.controller.invokeMethod = async (...args) => {
-  const response = await originalInvokeMethod(...args);
-  if (response && response.roomId && response.sessionId) {
-    // Colyseus.js v0.16.x expects the room object to be nested inside the response
-    return {
-      room: {
-        name: response.name,
-        roomId: response.roomId,
-        processId: response.processId,
-        publicAddress: response.publicAddress
-      },
-      sessionId: response.sessionId,
-      devMode: response.devMode,
-      reconnectionToken: response.reconnectionToken
-    };
-  }
-  return response;
-};
-// --------------------------------------------------------------------------
+// Patch removed because we upgraded colyseus.js to v0.17.2 on the client.
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -355,8 +335,8 @@ const gameServer = new Server({
   }
 });
 
-// Register the Room
-const roomType = gameServer.define("vortex_room", VortexRoom);
+// Register the Room and filter by gameId
+const roomType = gameServer.define("vortex_room", VortexRoom).filterBy(['gameId']);
 console.log("Room defined in Colyseus:", !!roomType);
 
 gameServer.listen(PORT, () => {

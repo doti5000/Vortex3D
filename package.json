@@ -14,8 +14,8 @@
   "dependencies": {
     "@dimforge/rapier3d-compat": "^0.14.0",
     "bcryptjs": "^2.4.3",
-    "colyseus": "^0.17.10",
-    "colyseus.js": "^0.16.22",
+    "colyseus": "^0.15.0",
+    "colyseus.js": "^0.15.0",
     "cors": "^2.8.5",
     "express": "^4.21.1",
     "lucide": "^0.460.0",
