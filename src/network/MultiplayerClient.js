@@ -59,6 +59,7 @@ export class MultiplayerClient {
               this.physicsManager.setPosition(rbId, entityState.x, entityState.y, entityState.z);
               this.physicsManager.setRotationQuat(rbId, entityState.rx, entityState.ry, entityState.rz, entityState.rw);
             }
+            }
           }
         };
 
