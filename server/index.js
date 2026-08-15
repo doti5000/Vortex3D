@@ -9,7 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { initDb, createUser, findUserByUsername, findUserById, saveGame, getGames, getGamesByUserId, deleteGame, createSession, findSessionByToken, upsertPhrycoUser } from './db.js';
+import { initDb, createUser, findUserByUsername, findUserById, saveGame, getGames, getGamesByUserId, deleteGame, createSession, findSessionByToken, upsertPhrycoUser, saveUser } from './db.js';
 import { VortexRoom } from './rooms/VortexRoom.js';
 
 // Patch removed because we upgraded colyseus.js to v0.17.2 on the client.
@@ -22,6 +22,9 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '50mb' }));
+
+import { SHOP_ASSETS, getAssetById } from './assets.js';
+
 
 // In-Memory Token Session Cache removed in favor of findSessionByToken from DB
 
@@ -116,7 +119,10 @@ app.post('/api/auth/login', async (req, res) => {
         username: user.username,
         email: user.email,
         skinColors: user.skin_colors || user.skinColors,
-        hatType: user.hat_type || user.hatType
+        hatType: user.hat_type || user.hatType,
+        vorbucks: user.vorbucks,
+        inventory: typeof user.inventory === 'string' ? JSON.parse(user.inventory) : user.inventory,
+        equipped: typeof user.equipped === 'string' ? JSON.parse(user.equipped) : user.equipped
       }
     });
   } catch (err) {
@@ -144,7 +150,10 @@ app.get('/api/auth/me', async (req, res) => {
       username: user.username,
       email: user.email,
       skinColors: user.skin_colors || user.skinColors,
-      hatType: user.hat_type || user.hatType
+      hatType: user.hat_type || user.hatType,
+      vorbucks: user.vorbucks,
+      inventory: typeof user.inventory === 'string' ? JSON.parse(user.inventory) : user.inventory,
+      equipped: typeof user.equipped === 'string' ? JSON.parse(user.equipped) : user.equipped
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch user session.' });
@@ -222,7 +231,83 @@ app.post('/api/auth/sso/callback', async (req, res) => {
   }
 });
 
-// 4. Fetch Real Games List
+// 4. Shop & Avatar API
+app.get('/api/shop/assets', (req, res) => {
+  res.json(SHOP_ASSETS);
+});
+
+app.post('/api/shop/buy', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'No authorization token provided.' });
+
+    const token = authHeader.replace('Bearer ', '');
+    const sessionInfo = await findSessionByToken(token);
+    if (!sessionInfo) return res.status(401).json({ error: 'Session expired or invalid.' });
+
+    const user = await findUserById(sessionInfo.userId);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const { assetId } = req.body;
+    const asset = getAssetById(assetId);
+    if (!asset) return res.status(404).json({ error: 'Asset not found.' });
+
+    const inv = typeof user.inventory === 'string' ? JSON.parse(user.inventory) : user.inventory || [];
+    if (inv.includes(assetId)) {
+      return res.status(400).json({ error: 'You already own this asset.' });
+    }
+
+    if (user.vorbucks < asset.price) {
+      return res.status(400).json({ error: 'Not enough Vorbucks.' });
+    }
+
+    user.vorbucks -= asset.price;
+    inv.push(assetId);
+    user.inventory = inv;
+    
+    await saveUser(user);
+    res.json({ success: true, vorbucks: user.vorbucks, inventory: user.inventory });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to purchase item.' });
+  }
+});
+
+app.post('/api/avatar/equip', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ error: 'No authorization token provided.' });
+
+    const token = authHeader.replace('Bearer ', '');
+    const sessionInfo = await findSessionByToken(token);
+    if (!sessionInfo) return res.status(401).json({ error: 'Session expired or invalid.' });
+
+    const user = await findUserById(sessionInfo.userId);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    const { assetId, type, unequip } = req.body;
+    
+    const inv = typeof user.inventory === 'string' ? JSON.parse(user.inventory) : user.inventory || [];
+    const equipped = typeof user.equipped === 'string' ? JSON.parse(user.equipped) : user.equipped || {};
+
+    if (!unequip && !inv.includes(assetId)) {
+      return res.status(403).json({ error: 'You do not own this asset.' });
+    }
+
+    if (unequip) {
+      delete equipped[type];
+    } else {
+      equipped[type] = assetId;
+    }
+    user.equipped = equipped;
+    
+    await saveUser(user);
+    res.json({ success: true, equipped: user.equipped });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to equip item.' });
+  }
+});
+
+// 5. Game Data (/api/games)
 app.get('/api/games', async (req, res) => {
   try {
     const games = await getGames();

@@ -111,6 +111,30 @@ export class GameClient {
       const uStr = localStorage.getItem('vortex3d_user');
       if (uStr) user = JSON.parse(uStr);
     } catch (e) {}
+    
+    let avatarConfig = {};
+    let skinColors = undefined;
+
+    // Resolve equipped assets to texture URLs
+    if (user && user.equipped) {
+      try {
+        const assetsRes = await fetch(`${getApiBaseUrl()}/api/shop/assets`);
+        const assets = await assetsRes.json();
+        
+        ['shirt', 'pants', 'face', 'hat'].forEach(type => {
+          if (user.equipped[type]) {
+            const asset = assets.find(a => a.id === user.equipped[type]);
+            if (asset) avatarConfig[type] = asset.textureUrl || asset.modelType;
+          }
+        });
+        
+        if (user.skinColors && Object.keys(user.skinColors).length > 0) {
+          skinColors = user.skinColors;
+        }
+      } catch(e) {
+        console.warn('Failed to resolve avatar assets:', e);
+      }
+    }
 
     const guestId = Math.floor(Math.random() * 9999);
     const playerId = user ? user.id : 'guest_' + guestId;
@@ -123,7 +147,9 @@ export class GameClient {
       position: [0, 5, 0],
       scene: this.renderer,
       physicsManager: this.physicsManager,
-      isLocalPlayer: true
+      isLocalPlayer: true,
+      avatarConfig: avatarConfig,
+      skinColors: skinColors
     });
     
     if (this.canvasUI) {
@@ -141,7 +167,14 @@ export class GameClient {
     const activeApiUrl = getApiBaseUrl();
     const serverUrl = activeApiUrl.replace('https://', 'wss://').replace('http://', 'ws://');
     
-    await this.multiplayerClient.connect(serverUrl, this.gameId, this.playerCharacter);
+    // We also need to pass the avatar config to the multiplayer server so others see us
+    const joinOptions = {
+      userId: this.playerCharacter.id,
+      username: this.playerCharacter.name,
+      avatarConfig: avatarConfig,
+      skinColors: skinColors
+    };
+    await this.multiplayerClient.connect(serverUrl, this.gameId, this.playerCharacter, joinOptions);
 
     // Sync coins to server
     window.addEventListener('coins_added', (e) => {

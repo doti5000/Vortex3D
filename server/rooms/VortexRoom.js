@@ -23,6 +23,7 @@ type("number")(PlayerState.prototype, "y");
 type("number")(PlayerState.prototype, "z");
 type("number")(PlayerState.prototype, "rotationY");
 type("number")(PlayerState.prototype, "gold");
+type("string")(PlayerState.prototype, "avatarConfig");
 
 class VortexState extends Schema {
   constructor() {
@@ -62,6 +63,20 @@ export class VortexRoom extends Room {
     const player = new PlayerState();
     player.id = options.userId || client.sessionId;
     player.username = options.username || "Guest";
+    
+    // Convert equipped asset IDs into full texture URLs for the game client
+    const config = { face: null, shirt: null, pants: null, hat: null, skinColors: null };
+    if (options.equipped) {
+      if (options.equipped.face) config.face = options.equipped.face;
+      if (options.equipped.shirt) config.shirt = options.equipped.shirt;
+      if (options.equipped.pants) config.pants = options.equipped.pants;
+      if (options.equipped.hat) config.hat = options.equipped.hat;
+    }
+    if (options.skinColors) {
+      config.skinColors = options.skinColors;
+    }
+    player.avatarConfig = JSON.stringify(config);
+
     this.state.players.set(client.sessionId, player);
   }
 

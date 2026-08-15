@@ -2,6 +2,8 @@ import { StudioApp } from './studio/StudioApp.js';
 import { StudioDashboard } from './studio/StudioDashboard.js';
 import { DiscoverApp } from './discover/DiscoverApp.js';
 import { GameClient } from './client/GameClient.js';
+import { AvatarApp } from './avatar/AvatarApp.js';
+import { ShopApp } from './shop/ShopApp.js';
 import { getApiBaseUrl } from './network/api.js';
 
 // Simple URL-based routing to decouple the application
@@ -57,6 +59,12 @@ if (mode === 'studio') {
   const gameId = params.get('id');
   const tunnelUrl = params.get('tunnelUrl');
   new GameClient(gameId, tunnelUrl);
+} else if (mode === 'avatar') {
+  console.log("Vortex3D: Launching Avatar Editor");
+  new AvatarApp();
+} else if (mode === 'shop') {
+  console.log("Vortex3D: Launching Asset Shop");
+  new ShopApp();
 } else {
   console.log("Vortex3D: Launching Discover Portal");
   new DiscoverApp();

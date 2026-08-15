@@ -17,7 +17,7 @@ export class MultiplayerClient {
    * Connect to authoritative Colyseus multiplayer session.
    * STRICT RULE: Multiplayer CANNOT start if player doesn't have an avatar!
    */
-  async connect(serverUrl = 'ws://localhost:3001', roomCode = 'vortex_room', localCharacter = null) {
+  async connect(serverUrl = 'ws://localhost:3001', roomCode = 'vortex_room', localCharacter = null, joinOptions = {}) {
     if (!localCharacter || !localCharacter.group) {
       console.warn('⚠️ Multiplayer Connection Blocked: Local player does not have an active avatar!');
       alert('⚠️ Multiplayer Cannot Start!\n\nYou must have an active player avatar in the scene to launch multiplayer.\n\nPlease select the "Classic R6 Avatar Playground" preset or spawn an Avatar first.');
@@ -29,7 +29,7 @@ export class MultiplayerClient {
       
       // We pass the gameId as the room name, but the server needs to define it.
       // We mapped "vortex_room" in server/index.js
-      this.room = await this.colyseusClient.joinOrCreate('vortex_room', { userId: localCharacter.id, gameId: roomCode });
+      this.room = await this.colyseusClient.joinOrCreate('vortex_room', { ...joinOptions, userId: localCharacter.id, gameId: roomCode });
       
       this.isConnected = true;
       this.peerId = this.room.sessionId;
@@ -45,13 +45,25 @@ export class MultiplayerClient {
             this.remotePlayers.delete(sessionId);
           }
 
+          let avatarConfig = {};
+          let skinColors = undefined;
+          if (player.avatarConfig) {
+            try {
+              const cfg = JSON.parse(player.avatarConfig);
+              avatarConfig = cfg;
+              if (cfg.skinColors) skinColors = cfg.skinColors;
+            } catch(e) {}
+          }
+
           const remoteChar = new Character({
             id: sessionId,
             name: player.username || player.id || 'Remote Player',
             position: [player.x, player.y, player.z],
             scene: this.scene,
             physicsManager: this.physicsManager,
-            isLocalPlayer: false
+            isLocalPlayer: false,
+            avatarConfig: avatarConfig,
+            skinColors: skinColors
           });
           remoteChar.gold = player.gold || 0;
           this.remotePlayers.set(sessionId, remoteChar);

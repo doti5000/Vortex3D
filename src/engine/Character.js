@@ -15,9 +15,10 @@ export class Character {
       torso: '#3b82f6',
       leftArm: '#fde047',
       rightArm: '#fde047',
-      leftLeg: '#1e293b',
-      rightLeg: '#1e293b'
+      leftLeg: '#4ade80',
+      rightLeg: '#4ade80'
     },
+    avatarConfig = {},
     hatType = 'fedora',
     scene,
     physicsManager,
@@ -26,6 +27,7 @@ export class Character {
     this.id = id || 'char_' + Math.random().toString(36).substring(2, 9);
     this.name = name;
     this.skinColors = skinColors;
+    this.avatarConfig = avatarConfig;
     this.hatType = hatType;
     this.scene = scene;
     this.physicsManager = physicsManager;
@@ -43,10 +45,10 @@ export class Character {
       sizeScale: 1.0
     };
 
-    this.faceTexturePath = '/textures/classic-face-texture.png';
-    this.shirtTexturePath = '/textures/classic-red-shirt-texture.png';
-    this.pantsTexturePath = null;
-    this.tshirtDecalPath = null;
+    this.faceTexturePath = this.avatarConfig.face || '/textures/classic-face-texture.png';
+    this.shirtTexturePath = this.avatarConfig.shirt || null;
+    this.pantsTexturePath = this.avatarConfig.pants || null;
+    this.tshirtDecalPath = this.avatarConfig.tshirt || null;
 
     // Key states
     this.keys = { w: false, a: false, s: false, d: false, space: false, c: false };

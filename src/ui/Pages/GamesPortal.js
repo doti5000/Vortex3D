@@ -64,6 +64,8 @@ export class GamesPortal {
           <option value="Vehicle Simulator">Vehicle Simulator</option>
           <option value="3D Platformer">3D Platformer</option>
         </select>
+        <button id="btn-portal-avatar" class="btn btn-secondary" style="padding: 10px 20px;">👕 Avatar</button>
+        <button id="btn-portal-shop" class="btn btn-secondary" style="padding: 10px 20px;">🛒 Shop</button>
         <button id="btn-portal-publish" class="btn btn-primary" style="padding: 10px 20px;">🚀 Publish New Game</button>
       </div>
 
@@ -133,6 +135,14 @@ export class GamesPortal {
 
     this.container.querySelector('#btn-portal-publish').addEventListener('click', () => {
       this.onOpenPublisher();
+    });
+
+    this.container.querySelector('#btn-portal-avatar').addEventListener('click', () => {
+      window.location.href = '/?mode=avatar';
+    });
+
+    this.container.querySelector('#btn-portal-shop').addEventListener('click', () => {
+      window.location.href = '/?mode=shop';
     });
   }
 }

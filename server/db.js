@@ -110,7 +110,20 @@ export async function initDb() {
       } catch(e) {}
       
       try {
-        await client.query('ALTER TABLE users ADD COLUMN phrybucks INT DEFAULT 0');
+        await client.query('ALTER TABLE users ADD COLUMN vorbucks INT DEFAULT 500');
+      } catch(e) {}
+      
+      try {
+        // Just in case we need to migrate existing phrybucks
+        await client.query('UPDATE users SET vorbucks = phrybucks WHERE phrybucks IS NOT NULL');
+      } catch(e) {}
+
+      try {
+        await client.query('ALTER TABLE users ADD COLUMN inventory JSONB DEFAULT \'[]\'');
+      } catch(e) {}
+
+      try {
+        await client.query('ALTER TABLE users ADD COLUMN equipped JSONB DEFAULT \'{}\'');
       } catch(e) {}
 
       try {
@@ -133,20 +146,27 @@ export async function createUser(user) {
   if (usePostgres && pool) {
     try {
       const res = await pool.query(
-        `INSERT INTO users (id, username, password_hash, skin_colors, hat_type)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id, username, skin_colors, hat_type, created_at`,
+        `INSERT INTO users (id, username, password_hash, skin_colors, hat_type, vorbucks, inventory, equipped)
+         VALUES ($1, $2, $3, $4, $5, 500, '[]', '{}') RETURNING id, username, skin_colors, hat_type, created_at, vorbucks, inventory, equipped`,
         [user.id, user.username, user.passwordHash, JSON.stringify(user.skinColors || {}), user.hatType || 'fedora']
       );
       return res.rows[0];
     } catch (err) {
-      console.warn('PG createUser error, storing to disk fallback:', err.message);
+      throw err;
     }
   }
 
-  const disk = getDiskDb();
-  disk.users.push(user);
-  saveDiskDb(disk);
-  return { id: user.id, username: user.username, skinColors: user.skinColors, hatType: user.hatType };
+  const db = getDiskDb();
+  const newUser = {
+    ...user,
+    vorbucks: 500,
+    inventory: [],
+    equipped: {},
+    created_at: new Date().toISOString()
+  };
+  db.users.push(newUser);
+  saveDiskDb(db);
+  return { id: user.id, username: user.username, skinColors: user.skinColors, hatType: user.hatType, vorbucks: 500, inventory: [], equipped: {} };
 }
 
 export async function findUserByUsername(username) {
@@ -155,26 +175,38 @@ export async function findUserByUsername(username) {
       const res = await pool.query('SELECT * FROM users WHERE LOWER(username) = LOWER($1)', [username]);
       if (res.rows.length > 0) return res.rows[0];
     } catch (err) {
-      console.warn('PG findUserByUsername error:', err.message);
+      throw err;
     }
   }
 
-  const disk = getDiskDb();
-  return disk.users.find(u => u.username.toLowerCase() === username.toLowerCase()) || null;
+  const db = getDiskDb();
+  let user = db.users.find(u => u.username.toLowerCase() === username.toLowerCase());
+  if (user) {
+    if (user.vorbucks === undefined) user.vorbucks = 500;
+    if (!user.inventory) user.inventory = [];
+    if (!user.equipped) user.equipped = {};
+  }
+  return user || null;
 }
 
 export async function findUserById(id) {
   if (usePostgres && pool) {
     try {
-      const res = await pool.query('SELECT id, username, email, skin_colors, hat_type, created_at FROM users WHERE id = $1', [id]);
+      const res = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
       if (res.rows.length > 0) return res.rows[0];
     } catch (err) {
-      console.warn('PG findUserById error:', err.message);
+      throw err;
     }
   }
 
-  const disk = getDiskDb();
-  return disk.users.find(u => u.id === id) || null;
+  const db = getDiskDb();
+  let user = db.users.find(u => u.id === id);
+  if (user) {
+    if (user.vorbucks === undefined) user.vorbucks = 500;
+    if (!user.inventory) user.inventory = [];
+    if (!user.equipped) user.equipped = {};
+  }
+  return user || null;
 }
 
 export async function upsertPhrycoUser(profile) {
@@ -184,54 +216,55 @@ export async function upsertPhrycoUser(profile) {
     try {
       const res = await pool.query('SELECT * FROM users WHERE phryco_id = $1', [phrycoId]);
       if (res.rows.length > 0) {
-        const updated = await pool.query(
-          'UPDATE users SET username = $1, phrybucks = $2 WHERE phryco_id = $3 RETURNING *',
-          [profile.username, profile.phrybucks_balance || 0, phrycoId]
-        );
-        return updated.rows[0];
+        return res.rows[0];
       }
       
       const emailRes = await pool.query('SELECT * FROM users WHERE email = $1', [profile.email]);
       if (emailRes.rows.length > 0) {
         const updated = await pool.query(
-          'UPDATE users SET phryco_id = $1, phrybucks = $2 WHERE email = $3 RETURNING *',
-          [phrycoId, profile.phrybucks_balance || 0, profile.email]
+          'UPDATE users SET phryco_id = $1 WHERE email = $2 RETURNING *',
+          [phrycoId, profile.email]
         );
         return updated.rows[0];
       }
       
       const userId = 'usr_' + crypto.randomBytes(8).toString('hex');
       const newUser = await pool.query(
-        `INSERT INTO users (id, username, email, password_hash, phryco_id, phrybucks)
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-        [userId, profile.username, profile.email, 'sso_user', phrycoId, profile.phrybucks_balance || 0]
+        `INSERT INTO users (id, username, email, password_hash, phryco_id, vorbucks, inventory, equipped)
+         VALUES ($1, $2, $3, $4, $5, 500, '[]', '{}') RETURNING *`,
+        [userId, profile.username, profile.email, 'sso_user', phrycoId]
       );
       return newUser.rows[0];
-    } catch(err) {
-      console.warn('PG upsertPhrycoUser error:', err.message);
+    } catch (err) {
+      throw err;
     }
   }
 
-  const disk = getDiskDb();
-  let user = disk.users.find(u => u.phrycoId === phrycoId) || disk.users.find(u => u.email === profile.email);
+  const db = getDiskDb();
+  let user = db.users.find(u => u.phryco_id === phrycoId) || db.users.find(u => u.email === profile.email);
   if (user) {
-    user.phrycoId = phrycoId;
+    user.phryco_id = phrycoId;
     user.username = profile.username;
-    user.phrybucks = profile.phrybucks_balance || 0;
+    
+    let updated = true;
+    if (user.vorbucks === undefined) { user.vorbucks = 500; }
+    if (!user.inventory) { user.inventory = []; }
+    if (!user.equipped) { user.equipped = {}; }
   } else {
     user = {
       id: 'usr_' + crypto.randomBytes(8).toString('hex'),
       username: profile.username,
       email: profile.email,
       passwordHash: 'sso_user',
-      phrycoId: phrycoId,
-      phrybucks: profile.phrybucks_balance || 0,
-      skinColors: {},
-      hatType: 'fedora'
+      phryco_id: phrycoId,
+      vorbucks: 500,
+      inventory: [],
+      equipped: {},
+      created_at: new Date().toISOString()
     };
-    disk.users.push(user);
+    db.users.push(user);
   }
-  saveDiskDb(disk);
+  saveDiskDb(db);
   return user;
 }
 
@@ -361,4 +394,24 @@ export async function findSessionByToken(token) {
 
   const disk = getDiskDb();
   return disk.sessions.find(s => s.token === token) || null;
+}
+
+export async function saveUser(user) {
+  if (usePostgres && pool) {
+    try {
+      await pool.query(
+        'UPDATE users SET vorbucks = $1, inventory = $2, equipped = $3 WHERE id = $4',
+        [user.vorbucks, JSON.stringify(user.inventory), JSON.stringify(user.equipped), user.id]
+      );
+    } catch (err) {
+      throw err;
+    }
+  } else {
+    const db = getDiskDb();
+    const idx = db.users.findIndex(u => u.id === user.id);
+    if (idx !== -1) {
+      db.users[idx] = user;
+      saveDiskDb(db);
+    }
+  }
 }

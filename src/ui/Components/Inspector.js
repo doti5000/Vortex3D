@@ -18,58 +18,11 @@ export function createInspector({ sceneManager, onEntityUpdate, physicsManager, 
         </div>
       </div>
 
-      <!-- PLAYER AVATAR WORKSHOP & CONFIGS -->
+
+
+      <!-- PLAYER CONTROLS & DEBUG -->
       <div class="form-section">
-        <div class="form-section-title" style="color: #8b5cf6;">AVATAR WORKSHOP & TEXTURING</div>
-
-        <!-- MULTI-COLOR BODY SKIN PICKER -->
-        <div style="margin-bottom: 10px;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: var(--text-dim); display: block; margin-bottom: 4px;">Classic Body Skin Colors</label>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
-            <div class="form-row"><label>Head</label><input type="color" id="skin-head" value="${playerChar ? playerChar.skinColors.head : '#fde047'}"></div>
-            <div class="form-row"><label>Torso</label><input type="color" id="skin-torso" value="${playerChar ? playerChar.skinColors.torso : '#3b82f6'}"></div>
-            <div class="form-row"><label>Left Arm</label><input type="color" id="skin-larm" value="${playerChar ? playerChar.skinColors.leftArm : '#fde047'}"></div>
-            <div class="form-row"><label>Right Arm</label><input type="color" id="skin-rarm" value="${playerChar ? playerChar.skinColors.rightArm : '#fde047'}"></div>
-            <div class="form-row"><label>Left Leg</label><input type="color" id="skin-lleg" value="${playerChar ? playerChar.skinColors.leftLeg : '#1e293b'}"></div>
-            <div class="form-row"><label>Right Leg</label><input type="color" id="skin-rleg" value="${playerChar ? playerChar.skinColors.rightLeg : '#1e293b'}"></div>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <label>3D Hat / Accessory</label>
-          <select id="inp-hat">
-            <option value="fedora" ${playerChar && playerChar.hatType === 'fedora' ? 'selected' : ''}>🎩 Classic Fedora</option>
-            <option value="wizard" ${playerChar && playerChar.hatType === 'wizard' ? 'selected' : ''}>🧙 Wizard Hat</option>
-            <option value="crown" ${playerChar && playerChar.hatType === 'crown' ? 'selected' : ''}>👑 Royal Crown</option>
-            <option value="cap" ${playerChar && playerChar.hatType === 'cap' ? 'selected' : ''}>🧢 Baseball Cap</option>
-            <option value="none" ${playerChar && playerChar.hatType === 'none' ? 'selected' : ''}>🚫 No Hat</option>
-          </select>
-        </div>
-
-        <div class="form-row">
-          <label>Shirt Texture</label>
-          <select id="inp-shirt">
-            <option value="/textures/classic-red-shirt-texture.png">🔴 Classic Red Shirt</option>
-            <option value="/textures/classic-shirt-texture-1.png">👕 Classic Uniform 1</option>
-          </select>
-        </div>
-
-        <!-- FILE UPLOADERS FOR CUSTOM TEXTURES & T-SHIRT DECALS -->
-        <div style="margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px;">
-          <label style="font-size: 0.75rem; font-weight: 600; color: #38bdf8; display: block; margin-bottom: 6px;">📤 Custom Image & Decal Uploader</label>
-          <div style="display: flex; flex-direction: column; gap: 6px;">
-            <label class="btn btn-secondary" style="font-size: 0.7rem; justify-content: center; cursor: pointer;">
-              📁 Upload Custom Shirt/Pants Image
-              <input type="file" id="file-custom-clothing" accept="image/*" style="display: none;">
-            </label>
-            <label class="btn btn-secondary" style="font-size: 0.7rem; justify-content: center; cursor: pointer;">
-              🖼️ Upload Front T-Shirt Decal Logo
-              <input type="file" id="file-custom-decal" accept="image/*" style="display: none;">
-            </label>
-          </div>
-        </div>
-
-        <div class="form-row" style="margin-top: 10px;">
+        <div class="form-section-title" style="color: #8b5cf6;">PLAYER CONTROLS & DEBUG</div>
           <label>Walk Speed</label>
           <input type="range" min="5" max="60" step="1" id="inp-speed" value="${playerChar ? playerChar.humanoid.walkSpeed : 18}">
           <span id="lbl-speed" style="font-family: var(--font-mono); font-size: 0.75rem; width: 35px;">${playerChar ? playerChar.humanoid.walkSpeed : 18}</span>
@@ -181,60 +134,7 @@ export function createInspector({ sceneManager, onEntityUpdate, physicsManager, 
     });
 
     // Multi-Color Body Part Skin Events
-    const skinInputs = [
-      { id: '#skin-head', part: 'head' },
-      { id: '#skin-torso', part: 'torso' },
-      { id: '#skin-larm', part: 'leftArm' },
-      { id: '#skin-rarm', part: 'rightArm' },
-      { id: '#skin-lleg', part: 'leftLeg' },
-      { id: '#skin-rreg', part: 'rightLeg' }
-    ];
 
-    skinInputs.forEach(item => {
-      const el = panel.querySelector(item.id);
-      if (el) {
-        el.addEventListener('input', (e) => {
-          const p = getPlayerCharacter ? getPlayerCharacter() : null;
-          if (p) p.setBodyPartColor(item.part, e.target.value);
-        });
-      }
-    });
-
-    // File Uploaders
-    const clothingFileInp = panel.querySelector('#file-custom-clothing');
-    if (clothingFileInp) {
-      clothingFileInp.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (evt) => {
-            const p = getPlayerCharacter ? getPlayerCharacter() : null;
-            if (p) p.setShirtTexture(evt.target.result);
-          };
-          reader.readAsDataURL(file);
-        }
-      });
-    }
-
-    const decalFileInp = panel.querySelector('#file-custom-decal');
-    if (decalFileInp) {
-      decalFileInp.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (evt) => {
-            const p = getPlayerCharacter ? getPlayerCharacter() : null;
-            if (p) p.setTShirtDecal(evt.target.result);
-          };
-          reader.readAsDataURL(file);
-        }
-      });
-    }
-
-    panel.querySelector('#inp-hat').addEventListener('change', (e) => {
-      const p = getPlayerCharacter ? getPlayerCharacter() : null;
-      if (p) p.setHat(e.target.value);
-    });
 
     panel.querySelector('#inp-speed').addEventListener('input', (e) => {
       const val = parseFloat(e.target.value);
@@ -250,10 +150,7 @@ export function createInspector({ sceneManager, onEntityUpdate, physicsManager, 
       if (p) p.setSizeScale(val);
     });
 
-    panel.querySelector('#inp-shirt').addEventListener('change', (e) => {
-      const p = getPlayerCharacter ? getPlayerCharacter() : null;
-      if (p) p.setShirtTexture(e.target.value);
-    });
+
 
     panel.querySelector('#inp-anim').addEventListener('change', (e) => {
       const p = getPlayerCharacter ? getPlayerCharacter() : null;
