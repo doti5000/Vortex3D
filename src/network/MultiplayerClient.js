@@ -12,6 +12,12 @@ export class MultiplayerClient {
     this.isConnected = false;
     this.onStatusChange = null;
     this.onChatMessage = null;
+    
+    // Broadcast optimization tracking
+    this.lastSentPos = { x: 0, y: 0, z: 0 };
+    this.lastSentRotY = 0;
+    this.lastSentState = '';
+    this.lastSentTime = 0;
   }
 
   /**
@@ -142,14 +148,38 @@ export class MultiplayerClient {
 
     const pos = localCharacter.group.position;
     const rotY = localCharacter.group.rotation.y;
-
-    this.room.send("player_update", {
-      x: pos.x,
-      y: pos.y,
-      z: pos.z,
-      rotationY: rotY,
-      state: localCharacter.humanoid.state
-    });
+    const state = localCharacter.humanoid.state;
+    
+    const now = Date.now();
+    
+    // Delta checks for robustness
+    const dx = pos.x - this.lastSentPos.x;
+    const dy = pos.y - this.lastSentPos.y;
+    const dz = pos.z - this.lastSentPos.z;
+    const distSq = dx*dx + dy*dy + dz*dz;
+    const rotDiff = Math.abs(rotY - this.lastSentRotY);
+    
+    const hasMoved = distSq > 0.0001; // sqrt(0.0001) = 0.01 units
+    const hasTurned = rotDiff > 0.01; // 0.01 radians
+    const hasStateChanged = state !== this.lastSentState;
+    const requiresHeartbeat = (now - this.lastSentTime) > 1000; // 1 second fallback
+    
+    if (hasMoved || hasTurned || hasStateChanged || requiresHeartbeat) {
+      this.room.send("player_update", {
+        x: pos.x,
+        y: pos.y,
+        z: pos.z,
+        rotationY: rotY,
+        state: state
+      });
+      
+      this.lastSentPos.x = pos.x;
+      this.lastSentPos.y = pos.y;
+      this.lastSentPos.z = pos.z;
+      this.lastSentRotY = rotY;
+      this.lastSentState = state;
+      this.lastSentTime = now;
+    }
   }
 
   sendGoldUpdate(amount) {

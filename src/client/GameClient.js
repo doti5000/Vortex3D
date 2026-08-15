@@ -124,7 +124,14 @@ export class GameClient {
       // Prevent WASD keys from moving the character while typing
       e.stopPropagation();
       if (e.key === 'Enter' && chatInput.value.trim().length > 0 && this.multiplayerClient) {
-        this.multiplayerClient.sendChat(chatInput.value.trim());
+        const text = chatInput.value.trim();
+        if (text === '/dance' || text === '/wave' || text === '/cheer') {
+          if (this.playerCharacter && this.playerCharacter.humanoid) {
+            this.playerCharacter.humanoid.state = text.substring(1);
+          }
+        } else {
+          this.multiplayerClient.sendChat(text);
+        }
         chatInput.value = '';
       }
     });
