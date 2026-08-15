@@ -1,7 +1,6 @@
 import colyseus from 'colyseus';
 const { Room } = colyseus;
-import schema from '@colyseus/schema';
-const { Schema, MapSchema, type } = schema;
+import { Schema, MapSchema, type } from '@colyseus/schema';
 
 class PlayerState extends Schema {
   constructor() {
