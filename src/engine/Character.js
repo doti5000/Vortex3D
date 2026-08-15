@@ -155,8 +155,8 @@ export class Character {
       bodyType: 1, // Dynamic
       shapeType: 0, // Box
       position: position,
-      extents: [2.0 * this.humanoid.sizeScale, 5.0 * this.humanoid.sizeScale, 1.2 * this.humanoid.sizeScale],
-      radius: 1.0,
+      extents: [2.0 * this.humanoid.sizeScale, 5.2 * this.humanoid.sizeScale, 1.2 * this.humanoid.sizeScale],
+      radius: 0.0,
       mass: 5.0,
       restitution: 0.1,
       friction: 0.8

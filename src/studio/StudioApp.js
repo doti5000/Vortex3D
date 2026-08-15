@@ -261,7 +261,7 @@ export class StudioApp {
         }
         gameData.tunnelUrl = tunnelUrl + '?room=' + Math.floor(Math.random()*1000);
         gameData.userId = user ? user.id : 'usr_guest';
-        gameData.sceneData = this.sceneManager.serialize();
+        gameData.sceneData = JSON.parse(this.sceneManager.serialize());
 
         try {
           const res = await fetch(`${getApiBaseUrl()}/api/games/publish`, {
