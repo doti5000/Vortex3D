@@ -258,6 +258,7 @@ export class StudioApp {
 
         if (this.currentGameId) {
           gameData.id = this.currentGameId;
+        }
         gameData.tunnelUrl = tunnelUrl;
         gameData.userId = user ? user.id : 'usr_guest';
         gameData.sceneData = JSON.parse(this.sceneManager.serialize());
