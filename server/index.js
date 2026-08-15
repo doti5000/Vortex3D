@@ -303,7 +303,7 @@ const gameServer = new Server({
 });
 
 // Register the Room
-gameServer.define("vortex_room", VortexRoom);
+gameServer.define("vortex_room", VortexRoom).filterBy(["gameId"]);
 
 server.listen(PORT, () => {
   console.log(`🚀 Vortex3D Server & WebSocket Engine listening on port ${PORT}`);
