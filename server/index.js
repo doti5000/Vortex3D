@@ -1,15 +1,37 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
-import { Server } from 'colyseus';
+import { Server, matchMaker } from 'colyseus';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { initDb, createUser, findUserByUsername, findUserById, saveGame, getGames, getGamesByUserId, deleteGame, createSession, upsertPhrycoUser } from './db.js';
+import { initDb, createUser, findUserByUsername, findUserById, saveGame, getGames, getGamesByUserId, deleteGame, createSession, findSessionByToken, upsertPhrycoUser } from './db.js';
 import { VortexRoom } from './rooms/VortexRoom.js';
+
+// --- Patch Colyseus 0.17 MatchMaker for colyseus.js 0.16 compatibility ---
+const originalInvokeMethod = matchMaker.controller.invokeMethod.bind(matchMaker.controller);
+matchMaker.controller.invokeMethod = async (...args) => {
+  const response = await originalInvokeMethod(...args);
+  if (response && response.roomId && response.sessionId) {
+    // Colyseus.js v0.16.x expects the room object to be nested inside the response
+    return {
+      room: {
+        name: response.name,
+        roomId: response.roomId,
+        processId: response.processId,
+        publicAddress: response.publicAddress
+      },
+      sessionId: response.sessionId,
+      devMode: response.devMode,
+      reconnectionToken: response.reconnectionToken
+    };
+  }
+  return response;
+};
+// --------------------------------------------------------------------------
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,8 +42,7 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: '50mb' }));
 
-// In-Memory Token Session Cache
-const activeSessions = new Map(); // token -> userId
+// In-Memory Token Session Cache removed in favor of findSessionByToken from DB
 
 // Initialize Database Schema
 initDb();
@@ -55,7 +76,6 @@ app.post('/api/auth/register', async (req, res) => {
     });
 
     const token = 'tok_' + crypto.randomBytes(16).toString('hex');
-    activeSessions.set(token, userId);
 
     await createSession({
       id: 'sess_' + crypto.randomBytes(8).toString('hex'),
@@ -99,7 +119,6 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const token = 'tok_' + crypto.randomBytes(16).toString('hex');
-    activeSessions.set(token, user.id);
 
     res.json({
       success: true,
@@ -125,7 +144,8 @@ app.get('/api/auth/me', async (req, res) => {
     if (!authHeader) return res.status(401).json({ error: 'No authorization token provided.' });
 
     const token = authHeader.replace('Bearer ', '');
-    const userId = activeSessions.get(token);
+    const sessionInfo = await findSessionByToken(token);
+    const userId = sessionInfo ? sessionInfo.userId : null;
     if (!userId) return res.status(401).json({ error: 'Session expired or invalid.' });
 
     const user = await findUserById(userId);
@@ -187,7 +207,6 @@ app.post('/api/auth/sso/callback', async (req, res) => {
 
     // Issue local token
     const token = 'tok_' + crypto.randomBytes(16).toString('hex');
-    activeSessions.set(token, localUser.id);
 
     await createSession({
       id: 'sess_' + crypto.randomBytes(8).toString('hex'),
@@ -232,7 +251,8 @@ app.get('/api/games/my', async (req, res) => {
     if (!authHeader) return res.status(401).json({ error: 'No authorization token provided.' });
 
     const token = authHeader.replace('Bearer ', '');
-    const userId = activeSessions.get(token);
+    const sessionInfo = await findSessionByToken(token);
+    const userId = sessionInfo ? sessionInfo.userId : null;
     if (!userId) return res.status(401).json({ error: 'Session expired or invalid.' });
 
     const games = await getGamesByUserId(userId);
@@ -249,7 +269,8 @@ app.post('/api/games/publish', async (req, res) => {
     if (!authHeader) return res.status(401).json({ error: 'You must be logged in to publish games.' });
 
     const token = authHeader.replace('Bearer ', '');
-    const userId = activeSessions.get(token);
+    const sessionInfo = await findSessionByToken(token);
+    const userId = sessionInfo ? sessionInfo.userId : null;
     if (!userId) return res.status(401).json({ error: 'Session expired or invalid. Please log in again.' });
 
     const { id, title, description, sceneData, thumbnailUrl, tunnelUrl } = req.body;
@@ -284,7 +305,8 @@ app.delete('/api/games/:id', async (req, res) => {
     if (!authHeader) return res.status(401).json({ error: 'You must be logged in to delete games.' });
 
     const token = authHeader.replace('Bearer ', '');
-    const userId = activeSessions.get(token);
+    const sessionInfo = await findSessionByToken(token);
+    const userId = sessionInfo ? sessionInfo.userId : null;
     if (!userId) return res.status(401).json({ error: 'Session expired or invalid.' });
 
     const gameId = req.params.id;
@@ -327,8 +349,9 @@ const gameServer = new Server({
 });
 
 // Register the Room
-gameServer.define("vortex_room", VortexRoom).filterBy(["gameId"]);
+const roomType = gameServer.define("vortex_room", VortexRoom);
+console.log("Room defined in Colyseus:", !!roomType);
 
-server.listen(PORT, () => {
+gameServer.listen(PORT, () => {
   console.log(`🚀 Vortex3D Server & WebSocket Engine listening on port ${PORT}`);
 });
