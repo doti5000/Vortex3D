@@ -9,6 +9,8 @@ import { MultiplayerClient } from '../network/MultiplayerClient.js';
 import { CanvasUIEngine } from '../ui/CanvasUIEngine.js';
 import { getApiBaseUrl } from '../network/api.js';
 import { MobileControls } from './MobileControls.js';
+import { EventBus } from '../engine/EventBus.js';
+import { GameStateMachine } from '../engine/GameStateMachine.js';
 
 export class GameClient {
   constructor(gameId, tunnelUrl) {
@@ -26,6 +28,9 @@ export class GameClient {
     this.multiplayerClient = null;
     this.canvasUI = null;
     this.mobileControls = null;
+
+    this.eventBus = new EventBus();
+    this.fsm = new GameStateMachine(this.eventBus);
 
     this.init();
   }

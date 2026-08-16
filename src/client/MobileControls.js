@@ -38,11 +38,13 @@ export class MobileControls {
     
     this.chatBtn = document.createElement('div');
     this.chatBtn.className = 'mobile-btn';
-    this.chatBtn.innerHTML = '💬';
+    // Chat icon (Speech bubble)
+    this.chatBtn.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
     
     this.jumpBtn = document.createElement('div');
-    this.jumpBtn.className = 'mobile-btn';
-    this.jumpBtn.innerHTML = '⇡';
+    this.jumpBtn.className = 'mobile-btn jump-btn';
+    // Jump icon (Arrow up)
+    this.jumpBtn.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>';
     
     this.actionZone.appendChild(this.chatBtn);
     this.actionZone.appendChild(this.jumpBtn);

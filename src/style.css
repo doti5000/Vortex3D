@@ -768,3 +768,14 @@ html, body {
   }
 }
 
+
+.jump-btn {
+  width: 72px;
+  height: 72px;
+  background: rgba(99, 102, 241, 0.6);
+  border-color: rgba(99, 102, 241, 0.8);
+}
+.jump-btn:active {
+  background: rgba(99, 102, 241, 0.9);
+}
+

@@ -91,16 +91,25 @@ export class Renderer {
   }
 
   followAvatar(avatarPosition) {
-    if (!avatarPosition) return;
-    const targetVec = new THREE.Vector3(avatarPosition.x, avatarPosition.y + 1.5, avatarPosition.z);
-    this.controls.target.lerp(targetVec, 0.1);
-
-    const desiredCamPos = new THREE.Vector3(
+    if (!this.controls) return;
+    
+    // Look slightly above the character's feet
+    const targetPos = new THREE.Vector3(
       avatarPosition.x,
-      avatarPosition.y + 6.0,
-      avatarPosition.z + 14.0
+      avatarPosition.y + 1.5,
+      avatarPosition.z
     );
-    this.camera.position.lerp(desiredCamPos, 0.05);
+
+    // Calculate current offset from camera to existing target
+    const currentOffset = new THREE.Vector3().subVectors(this.camera.position, this.controls.target);
+    
+    // Smoothly pan the target
+    this.controls.target.lerp(targetPos, 0.1);
+    
+    // Apply preserved offset to new target to maintain user's rotation/zoom
+    this.camera.position.copy(this.controls.target).add(currentOffset);
+    
+    this.controls.update();
   }
 
   createOrUpdateEntityMesh(entity) {
