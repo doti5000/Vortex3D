@@ -66,7 +66,7 @@ export class AuthApp {
       const code_verifier = 'test_verifier_' + Math.random().toString(36).substring(7);
       sessionStorage.setItem('pkce_code_verifier', code_verifier);
       const redirect_uri = window.location.origin + '/';
-      const ssoUrl = \`https://phryco.com/oauth/authorize?client_id=vortex3d&redirect_uri=\${encodeURIComponent(redirect_uri)}&response_type=code&code_challenge=\${code_verifier}&code_challenge_method=plain\`;
+      const ssoUrl = `https://phryco.com/oauth/authorize?client_id=vortex3d&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&code_challenge=${code_verifier}&code_challenge_method=plain`;
       window.location.href = ssoUrl;
     });
 
@@ -87,7 +87,7 @@ export class AuthApp {
       }
 
       try {
-        const res = await fetch(\`\${getApiBaseUrl()}\${endpoint}\`, {
+        const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
