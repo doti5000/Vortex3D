@@ -8,6 +8,7 @@ import { ParticleSystem } from '../engine/ParticleSystem.js';
 import { MultiplayerClient } from '../network/MultiplayerClient.js';
 import { CanvasUIEngine } from '../ui/CanvasUIEngine.js';
 import { getApiBaseUrl } from '../network/api.js';
+import { MobileControls } from './MobileControls.js';
 
 export class GameClient {
   constructor(gameId, tunnelUrl) {
@@ -24,6 +25,7 @@ export class GameClient {
     this.particleSystem = null;
     this.multiplayerClient = null;
     this.canvasUI = null;
+    this.mobileControls = null;
 
     this.init();
   }
@@ -149,6 +151,14 @@ export class GameClient {
     this.particleSystem = new ParticleSystem(this.renderer.scene);
     this.canvasUI = new CanvasUIEngine(viewportEl, this.renderer, this.sceneManager);
     this.multiplayerClient = new MultiplayerClient(this.renderer, this.physicsManager);
+
+    // Initialize Mobile Controls
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      this.mobileControls = new MobileControls();
+      this.mobileControls.onChatToggle = () => {
+        chatInput.focus();
+      };
+    }
 
     // Load Game Data
     await this.loadGameData();
@@ -409,6 +419,12 @@ export class GameClient {
       this.syncTransformsFromPhysics();
 
       if (this.playerCharacter) {
+        if (this.mobileControls) {
+           this.playerCharacter.mobileMoveX = this.mobileControls.moveX;
+           this.playerCharacter.mobileMoveZ = this.mobileControls.moveZ;
+           this.playerCharacter.mobileJump = this.mobileControls.isJumping;
+        }
+
         const oldState = this.playerCharacter.humanoid.state;
         this.playerCharacter.update();
         if (oldState !== 'jump' && this.playerCharacter.humanoid.state === 'jump') {

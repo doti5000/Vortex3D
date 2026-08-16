@@ -321,8 +321,8 @@ export class Character {
     if (!this.rigidBodyId) return;
 
     if (this.isLocalPlayer) {
-      let moveX = 0;
-      let moveZ = 0;
+      let moveX = this.mobileMoveX || 0;
+      let moveZ = this.mobileMoveZ || 0;
 
       if (this.keys.w) moveZ -= 1;
       if (this.keys.s) moveZ += 1;
@@ -338,11 +338,24 @@ export class Character {
         this.humanoid.state = 'fall';
       } else if (Math.abs(currentVel[1]) > 3.0) {
         this.humanoid.state = 'jump';
+      } else if (this.keys[' '] || this.mobileJump) { // Jump logic
+        if (currentVel[1] < 0.5 && currentVel[1] > -0.5) { // Simple ground check
+          this.humanoid.state = 'jump';
+          this.physicsManager.setVelocity(this.rigidBodyId, currentVel[0], 12, currentVel[2]);
+        }
       } else if (moveX !== 0 || moveZ !== 0) {
         this.humanoid.state = 'walk';
-        const len = Math.sqrt(moveX * moveX + moveZ * moveZ);
-        const vx = (moveX / len) * this.humanoid.walkSpeed;
-        const vz = (moveZ / len) * this.humanoid.walkSpeed;
+        
+        // Use analog magnitude if provided by joystick, else fallback to 1.0 for keyboard
+        let magnitude = Math.sqrt(moveX * moveX + moveZ * moveZ);
+        if (magnitude > 1.0) {
+          moveX /= magnitude;
+          moveZ /= magnitude;
+          magnitude = 1.0;
+        }
+        
+        const vx = moveX * this.humanoid.walkSpeed;
+        const vz = moveZ * this.humanoid.walkSpeed;
 
         this.physicsManager.setVelocity(this.rigidBodyId, vx, currentVel[1], vz);
         const angle = Math.atan2(moveX, moveZ);
