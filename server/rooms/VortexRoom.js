@@ -134,13 +134,10 @@ export class VortexRoom extends Room {
     player.id = options.userId || client.sessionId;
     player.username = options.username || "Guest";
     
-    // Convert equipped asset IDs into full texture URLs for the game client
-    const config = { face: null, shirt: null, pants: null, hat: null, skinColors: null };
-    if (options.equipped) {
-      if (options.equipped.face) config.face = options.equipped.face;
-      if (options.equipped.shirt) config.shirt = options.equipped.shirt;
-      if (options.equipped.pants) config.pants = options.equipped.pants;
-      if (options.equipped.hat) config.hat = options.equipped.hat;
+    // The client has already resolved asset IDs into URLs in avatarConfig
+    let config = { face: null, shirt: null, pants: null, hat: null, skinColors: null };
+    if (options.avatarConfig) {
+      config = { ...config, ...options.avatarConfig };
     }
     if (options.skinColors) {
       config.skinColors = options.skinColors;
