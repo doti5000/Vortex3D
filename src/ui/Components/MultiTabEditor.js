@@ -1,5 +1,4 @@
-import * as monaco from 'monaco-editor/editor/editor.api.js';
-import 'monaco-editor/basic-languages/lua/lua.contribution.js';
+import * as monaco from 'monaco-editor';
 
 export function createMultiTabEditor({ sceneManager, viewportEl }) {
   const container = document.createElement('div');

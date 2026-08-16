@@ -1,11 +1,15 @@
 import { defineConfig } from 'vite';
 import wasm from 'vite-plugin-wasm';
 import topLevelAwait from 'vite-plugin-top-level-await';
+import monacoEditorPlugin from 'vite-plugin-monaco-editor';
 
 export default defineConfig({
   plugins: [
     wasm(),
-    topLevelAwait()
+    topLevelAwait(),
+    monacoEditorPlugin.default({
+      languageWorkers: ['editorWorkerService', 'json', 'typescript']
+    })
   ],
   server: {
     host: '0.0.0.0',
