@@ -316,37 +316,32 @@ export class StudioApp {
       this.playerVehicle = null;
     }
 
-    if (presetName === 'vehicle') {
-      loadLuauVehicleGame(this.sceneManager, this.physicsManager, this.luauVM);
-      this.playerVehicle = new VehicleController({
-        id: 'vehicle_player',
-        position: [0, 4, 0],
-        scene: this.renderer,
-        physicsManager: this.physicsManager
-      });
-    } else if (presetName === 'platformer') {
-      loadLuauPlatformerGame(this.sceneManager, this.physicsManager, this.luauVM);
-      this.playerCharacter = new Character({
-        id: 'player_local',
-        name: 'Player 1',
-        position: [0, 5, 0],
-        scene: this.renderer,
-        physicsManager: this.physicsManager,
-        isLocalPlayer: true
-      });
-    } else if (presetName === 'sandbox') {
-      loadLuauSandboxDemo(this.sceneManager, this.physicsManager, this.luauVM);
-    } else {
-      loadLuauAvatarMultiplayerDemo(this.sceneManager, this.physicsManager, this.luauVM);
-      this.playerCharacter = new Character({
-        id: 'player_local',
-        name: 'Player 1',
-        position: [0, 4, 10],
-        scene: this.renderer,
-        physicsManager: this.physicsManager,
-        isLocalPlayer: true
-      });
-    }
+    this.sceneManager.clear();
+    
+    // Create a base platform
+    const floor = this.sceneManager.createEntity('Baseplate');
+    floor.transform.scale = [20, 1, 20];
+    floor.meshRenderer.geometryType = 'box';
+    floor.meshRenderer.color = '#374151';
+    floor.collider.shapeType = 0; // Box
+    floor.rigidBody = {
+      enabled: true,
+      bodyType: 0, // Static
+      mass: 0,
+      restitution: 0.2,
+      friction: 0.5
+    };
+    this.sceneManager.addNode(floor, this.sceneManager.root);
+
+    // Default to character
+    this.playerCharacter = new Character({
+      id: 'player_local',
+      name: 'Player 1',
+      position: [0, 4, 0],
+      scene: this.renderer,
+      physicsManager: this.physicsManager,
+      isLocalPlayer: true
+    });
 
     this.rebuildPhysicsWorld();
   }
