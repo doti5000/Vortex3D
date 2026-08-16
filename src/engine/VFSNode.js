@@ -44,6 +44,21 @@ export class VFSNode {
       children: this.children.map(c => c.serialize())
     };
   }
+
+  clone() {
+    const serialized = this.serialize();
+    
+    // Recursively strip IDs to force new generation
+    const stripIds = (data) => {
+      delete data.id;
+      if (data.children) {
+        data.children.forEach(stripIds);
+      }
+    };
+    stripIds(serialized);
+    
+    return deserializeNode(serialized);
+  }
 }
 
 export class FolderNode extends VFSNode {

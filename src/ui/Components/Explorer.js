@@ -19,6 +19,13 @@ export function createExplorer({ sceneManager, onAddNode, onDeleteNode, onNodeDo
     
     <!-- Context Menu -->
     <div id="explorer-context-menu" class="context-menu" style="display: none; position: absolute; z-index: 100; background: #1f2937; border: 1px solid #374151; padding: 4px; border-radius: 4px; min-width: 140px;">
+      <div class="menu-item" data-action="rename">Rename</div>
+      <div style="height: 1px; background: #374151; margin: 4px 0;"></div>
+      <div class="menu-item" data-action="cut">Cut</div>
+      <div class="menu-item" data-action="copy">Copy</div>
+      <div class="menu-item" data-action="paste">Paste Into</div>
+      <div class="menu-item" data-action="duplicate">Duplicate</div>
+      <div style="height: 1px; background: #374151; margin: 4px 0;"></div>
       <div class="menu-item" data-action="add-folder">📁 Add Folder</div>
       <div class="menu-item" data-action="add-server-script">📜 Add Server Script</div>
       <div class="menu-item" data-action="add-client-script">📝 Add Client Script</div>
@@ -52,7 +59,22 @@ export function createExplorer({ sceneManager, onAddNode, onDeleteNode, onNodeDo
       return;
     }
 
-    if (action === 'add-folder') onAddNode('Folder', contextNodeId);
+    if (action === 'rename' && contextNodeId) {
+      const node = sceneManager.getNode(contextNodeId);
+      if (node && node.id !== sceneManager.root.id) {
+        const newName = prompt('Enter new name:', node.name);
+        if (newName !== null && newName.trim() !== '') {
+          sceneManager.renameNode(contextNodeId, newName.trim());
+        }
+      }
+      return;
+    }
+
+    if (action === 'cut' && contextNodeId) sceneManager.cutNode(contextNodeId);
+    else if (action === 'copy' && contextNodeId) sceneManager.copyNode(contextNodeId);
+    else if (action === 'paste' && contextNodeId) sceneManager.pasteNode(contextNodeId);
+    else if (action === 'duplicate' && contextNodeId) sceneManager.duplicateNode(contextNodeId);
+    else if (action === 'add-folder') onAddNode('Folder', contextNodeId);
     else if (action === 'add-server-script') onAddNode('ServerScript', contextNodeId);
     else if (action === 'add-client-script') onAddNode('ClientScript', contextNodeId);
     else if (action.startsWith('add-obj-')) {
@@ -75,8 +97,39 @@ export function createExplorer({ sceneManager, onAddNode, onDeleteNode, onNodeDo
     else if (node.name === 'Workspace') icon = '🌐';
 
     item.innerHTML = `
-      <span style="user-select: none;">${icon} ${node.name}</span>
+      <span style="user-select: none; pointer-events: none;">${icon} ${node.name}</span>
     `;
+
+    // Make everything draggable except root
+    if (node.id !== sceneManager.root.id) {
+      item.draggable = true;
+      item.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', node.id);
+        e.stopPropagation();
+      });
+    }
+
+    item.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      item.style.border = '1px dashed #60a5fa';
+    });
+
+    item.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      item.style.border = 'none';
+    });
+
+    item.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      item.style.border = 'none';
+      const sourceId = e.dataTransfer.getData('text/plain');
+      if (sourceId && sourceId !== node.id) {
+        sceneManager.moveNode(sourceId, node.id);
+      }
+    });
 
     item.addEventListener('click', (e) => {
       sceneManager.selectEntity(node.id);
