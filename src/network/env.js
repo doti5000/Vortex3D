@@ -1,1 +1,1 @@
-export const ACTIVE_TUNNEL_URL = 'https://vortex3d-live-7rwyz.trycloudflare.com';
+export const ACTIVE_TUNNEL_URL = 'https://weed-represents-reasons-cubic.trycloudflare.com';
