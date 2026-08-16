@@ -1,1 +1,1 @@
-export const ACTIVE_TUNNEL_URL = 'https://vortex3d-live-dtzws.trycloudflare.com';
+export const ACTIVE_TUNNEL_URL = 'https://argued-driver-column-merchant.trycloudflare.com';
