@@ -54,10 +54,12 @@ class VortexState extends Schema {
     super();
     this.players = new MapSchema();
     this.entities = new MapSchema();
+    this.workspaceJson = "";
   }
 }
 type({ map: PlayerState })(VortexState.prototype, "players");
 type({ map: EntityState })(VortexState.prototype, "entities");
+type("string")(VortexState.prototype, "workspaceJson");
 
 export class VortexRoom extends Room {
   maxClients = 8;
@@ -125,6 +127,26 @@ export class VortexRoom extends Room {
       ent.ry = data.ry;
       ent.rz = data.rz;
       ent.rw = data.rw;
+    });
+
+    this.onMessage("workspace_sync", (client, workspaceData) => {
+      // The host/studio sends the full workspace tree. We must filter out ServerScripts
+      // before rebroadcasting it to the room state.
+      try {
+        const tree = JSON.parse(workspaceData);
+        
+        const filterTree = (node) => {
+          if (node.children && Array.isArray(node.children)) {
+            node.children = node.children.filter(c => c.type !== 'ServerScript');
+            node.children.forEach(filterTree);
+          }
+        };
+        
+        filterTree(tree);
+        this.state.workspaceJson = JSON.stringify(tree);
+      } catch (e) {
+        console.error("[VortexRoom] Failed to parse workspace sync data:", e);
+      }
     });
   }
 

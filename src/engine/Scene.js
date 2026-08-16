@@ -1,27 +1,48 @@
 import { Entity } from './ECS.js';
+import { FolderNode, deserializeNode, VFSNode } from './VFSNode.js';
 
 export class Scene {
   constructor(name = 'Default Scene') {
     this.name = name;
+    
+    // Flat map of ALL nodes (Folders, Scripts, Entities) for fast lookup by ID
+    this.nodes = new Map();
+    
+    // The master Workspace tree
+    this.root = new FolderNode('Workspace');
+    this.nodes.set(this.root.id, this.root);
+
+    // Maintain a map of strictly 3D entities for backwards compatibility with systems
+    // that iterate over scene.entities.values()
     this.entities = new Map();
-    this.rootEntityIds = [];
+    
     this.selectedEntityId = null;
     this.onSelectionChange = null;
     this.onSceneChange = null;
   }
 
-  addEntity(entity) {
-    this.entities.set(entity.id, entity);
-    if (!entity.parentId) {
-      this.rootEntityIds.push(entity.id);
-    } else {
-      const parent = this.entities.get(entity.parentId);
-      if (parent && !parent.children.includes(entity.id)) {
-        parent.children.push(entity.id);
+  addNode(node, parentNode = null) {
+    if (!parentNode) parentNode = this.root;
+    
+    parentNode.addChild(node);
+    
+    // Recursively register nodes
+    const register = (n) => {
+      this.nodes.set(n.id, n);
+      if (n.type === 'Entity' || n instanceof Entity) {
+        this.entities.set(n.id, n);
       }
-    }
+      for (const child of n.children) register(child);
+    };
+    register(node);
+
     this.notifyChange();
-    return entity;
+    return node;
+  }
+
+  // Backwards compatibility
+  addEntity(entity) {
+    return this.addNode(entity, this.root);
   }
 
   createEntity(name = 'Cube') {
@@ -29,31 +50,43 @@ export class Scene {
     return this.addEntity(ent);
   }
 
-  removeEntity(id) {
-    const ent = this.entities.get(id);
-    if (!ent) return;
+  removeNode(id) {
+    if (id === this.root.id) return; // Cannot delete workspace
+    
+    const node = this.nodes.get(id);
+    if (!node) return;
 
-    // Recursively remove children
-    for (const childId of [...ent.children]) {
-      this.removeEntity(childId);
+    if (node.parent) {
+      node.parent.removeChild(node);
     }
 
-    if (ent.parentId) {
-      const parent = this.entities.get(ent.parentId);
-      if (parent) parent.children = parent.children.filter(c => c !== id);
-    } else {
-      this.rootEntityIds = this.rootEntityIds.filter(r => r !== id);
-    }
+    // Recursively unregister
+    const unregister = (n) => {
+      this.nodes.delete(n.id);
+      if (n.type === 'Entity' || n instanceof Entity) {
+        this.entities.delete(n.id);
+      }
+      for (const child of [...n.children]) unregister(child);
+    };
+    unregister(node);
 
-    this.entities.delete(id);
     if (this.selectedEntityId === id) {
       this.selectEntity(null);
     }
     this.notifyChange();
   }
 
+  // Backwards comp
+  removeEntity(id) {
+    this.removeNode(id);
+  }
+
   getEntity(id) {
     return this.entities.get(id);
+  }
+
+  getNode(id) {
+    return this.nodes.get(id);
   }
 
   selectEntity(id) {
@@ -62,8 +95,10 @@ export class Scene {
   }
 
   clear() {
+    this.nodes.clear();
     this.entities.clear();
-    this.rootEntityIds = [];
+    this.root = new FolderNode('Workspace');
+    this.nodes.set(this.root.id, this.root);
     this.selectedEntityId = null;
     this.notifyChange();
   }
@@ -71,18 +106,7 @@ export class Scene {
   serialize() {
     return JSON.stringify({
       name: this.name,
-      entities: Array.from(this.entities.values()).map(e => ({
-        id: e.id,
-        name: e.name,
-        parentId: e.parentId,
-        children: e.children,
-        transform: e.transform,
-        meshRenderer: e.meshRenderer,
-        rigidBody: e.rigidBody,
-        collider: e.collider,
-        light: e.light,
-        luauScript: e.luauScript
-      }))
+      workspace: this.root.serialize()
     }, null, 2);
   }
 
@@ -92,21 +116,31 @@ export class Scene {
       this.clear();
       this.name = data.name || 'Imported Scene';
 
-      if (data.entities && Array.isArray(data.entities)) {
+      if (data.workspace) {
+        // Full VFS tree
+        const importedRoot = deserializeNode(data.workspace);
+        importedRoot.name = 'Workspace'; // Enforce name
+        
+        // Register all nodes from imported root
+        this.root = importedRoot;
+        const register = (n) => {
+          this.nodes.set(n.id, n);
+          if (n.type === 'Entity' || n instanceof Entity) {
+            this.entities.set(n.id, n);
+          }
+          for (const child of n.children) register(child);
+        };
+        register(this.root);
+      } else if (data.entities && Array.isArray(data.entities)) {
+        // Legacy flat entity list
         for (const item of data.entities) {
           const ent = new Entity(item.name);
-          ent.id = item.id;
-          ent.parentId = item.parentId;
-          ent.children = item.children || [];
-          ent.transform = item.transform;
-          ent.meshRenderer = item.meshRenderer;
-          ent.rigidBody = item.rigidBody;
-          ent.collider = item.collider;
-          ent.light = item.light;
-          ent.luauScript = item.luauScript;
+          Object.assign(ent, item);
           this.addEntity(ent);
         }
       }
+      
+      this.notifyChange();
     } catch (err) {
       console.error('Failed to parse scene JSON:', err);
     }

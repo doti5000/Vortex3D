@@ -1,12 +1,11 @@
 // Entity Component System for 3D Game Platform
 
-export class Entity {
-  constructor(name = 'New Entity') {
-    this.id = 'ent_' + Math.random().toString(36).substring(2, 9);
-    this.name = name;
-    this.parentId = null;
-    this.children = [];
+import { VFSNode } from './VFSNode.js';
 
+export class Entity extends VFSNode {
+  constructor(name = 'New Entity') {
+    super(name, 'Entity');
+    
     // Core Components
     this.transform = {
       position: [0, 0, 0],
@@ -54,5 +53,16 @@ export class Entity {
     // Internal WASM handle
     this.rigidBodyId = null;
     this.threeMesh = null;
+  }
+
+  serialize() {
+    const data = super.serialize();
+    data.transform = this.transform;
+    data.meshRenderer = this.meshRenderer;
+    data.rigidBody = this.rigidBody;
+    data.collider = this.collider;
+    data.light = this.light;
+    data.luauScript = this.luauScript;
+    return data;
   }
 }

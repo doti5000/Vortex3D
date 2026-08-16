@@ -4,6 +4,7 @@ import { DiscoverApp } from './discover/DiscoverApp.js';
 import { GameClient } from './client/GameClient.js';
 import { AvatarApp } from './avatar/AvatarApp.js';
 import { ShopApp } from './shop/ShopApp.js';
+import { AuthApp } from './auth/AuthApp.js';
 import { getApiBaseUrl } from './network/api.js';
 
 // Simple URL-based routing to decouple the application
@@ -65,6 +66,9 @@ if (mode === 'studio') {
 } else if (mode === 'shop') {
   console.log("Vortex3D: Launching Asset Shop");
   new ShopApp();
+} else if (mode === 'auth') {
+  console.log("Vortex3D: Launching Auth Portal");
+  new AuthApp();
 } else {
   console.log("Vortex3D: Launching Discover Portal");
   new DiscoverApp();

@@ -14,18 +14,14 @@ import { getApiBaseUrl } from '../network/api.js';
 
 import { createHeader } from '../ui/Components/Header.js';
 import { createViewport } from '../ui/Components/Viewport.js';
-import { createHierarchy } from '../ui/Components/Hierarchy.js';
+import { createExplorer } from '../ui/Components/Explorer.js';
 import { createInspector } from '../ui/Components/Inspector.js';
-import { createLuauEditor } from '../ui/Components/LuauEditor.js';
+import { createMultiTabEditor } from '../ui/Components/MultiTabEditor.js';
 import { createPhysicsPanel } from '../ui/Components/PhysicsPanel.js';
 import { createPublishModal } from '../ui/Components/PublishModal.js';
 import { CanvasUIEngine } from '../ui/CanvasUIEngine.js';
 import { GamesPortal } from '../ui/Pages/GamesPortal.js';
-
-import { loadLuauSandboxDemo } from '../demos/LuauSandboxDemo.js';
-import { loadLuauVehicleGame } from '../demos/LuauVehicleGame.js';
-import { loadLuauPlatformerGame } from '../demos/LuauPlatformerGame.js';
-import { loadLuauAvatarMultiplayerDemo } from '../demos/LuauAvatarMultiplayerDemo.js';
+import { FolderNode, ServerScriptNode, ClientScriptNode } from '../engine/VFSNode.js';
 
 export class StudioApp {
   constructor() {
@@ -73,10 +69,29 @@ export class StudioApp {
     });
 
     // 2. Build Sidebar & Panels
-    const hierarchyPanel = createHierarchy({
+    const explorerPanel = createExplorer({
       sceneManager: this.sceneManager,
-      onAddEntity: (name, shape) => this.spawnEntity(name, shape),
-      onDeleteEntity: (id) => this.deleteEntity(id)
+      onAddNode: (type, parentId) => {
+        // Handle adding nodes logic (Delegated to ObjectRegistry later, stub for now)
+        let node;
+        if (type === 'Folder') {
+          node = new FolderNode('New Folder');
+        } else if (type === 'ServerScript') {
+          node = new ServerScriptNode('Server Script');
+        } else if (type === 'ClientScript') {
+          node = new ClientScriptNode('Client Script');
+        }
+        if (node) {
+          const parent = this.sceneManager.getNode(parentId) || this.sceneManager.root;
+          this.sceneManager.addNode(node, parent);
+        }
+      },
+      onDeleteNode: (id) => this.sceneManager.removeNode(id),
+      onNodeDoubleClick: (node) => {
+        if (node.type === 'ServerScript' || node.type === 'ClientScript') {
+          this.multiTabEditor.openScript(node);
+        }
+      }
     });
 
     const rightPanel = document.createElement('div');
@@ -86,7 +101,6 @@ export class StudioApp {
     tabHeader.className = 'tab-header';
     tabHeader.innerHTML = `
       <button class="tab-btn active" data-tab="inspector">INSPECTOR</button>
-      <button class="tab-btn" data-tab="luau">LUAU SCRIPT</button>
     `;
 
     const inspectorEl = createInspector({
@@ -96,38 +110,20 @@ export class StudioApp {
       getPlayerCharacter: () => this.playerCharacter
     });
 
-    const luauEditorEl = createLuauEditor({
-      sceneManager: this.sceneManager,
-      luauVM: this.luauVM
-    });
-
-    luauEditorEl.style.display = 'none';
-
-    tabHeader.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        tabHeader.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        if (btn.dataset.tab === 'inspector') {
-          inspectorEl.style.display = 'block';
-          luauEditorEl.style.display = 'none';
-        } else {
-          inspectorEl.style.display = 'none';
-          luauEditorEl.style.display = 'block';
-        }
-      });
-    });
-
     rightPanel.appendChild(tabHeader);
     rightPanel.appendChild(inspectorEl);
-    rightPanel.appendChild(luauEditorEl);
+
+    // Create central MultiTabEditor hosting Viewport
+    this.multiTabEditor = createMultiTabEditor({
+      sceneManager: this.sceneManager,
+      viewportEl: viewportEl
+    });
 
     this.workspaceEl = document.createElement('div');
     this.workspaceEl.className = 'studio-workspace';
-    this.workspaceEl.appendChild(hierarchyPanel);
-    this.workspaceEl.appendChild(viewportEl);
+    this.workspaceEl.appendChild(explorerPanel);
+    this.workspaceEl.appendChild(this.multiTabEditor);
     this.workspaceEl.appendChild(rightPanel);
-
-    // Games Portal removed (handled by DiscoverApp)
 
     // 4. Build Header & Bottom Telemetry Bar
     this.headerUI = createHeader({
