@@ -436,7 +436,12 @@ export class GameClient {
           this.audioManager.playSound('jump', [this.playerCharacter.group.position.x, this.playerCharacter.group.position.y, this.playerCharacter.group.position.z]);
         }
         if (this.renderer) this.renderer.followAvatar(this.playerCharacter.group.position);
-        if (this.multiplayerClient) this.multiplayerClient.sendLocalState(this.playerCharacter);
+        if (this.multiplayerClient) {
+          this.multiplayerClient.sendLocalState(this.playerCharacter);
+          for (const remotePlayer of this.multiplayerClient.remotePlayers.values()) {
+            remotePlayer.update();
+          }
+        }
       }
 
       if (this.canvasUI) {
