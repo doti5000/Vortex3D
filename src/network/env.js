@@ -1,1 +1,1 @@
-export const ACTIVE_TUNNEL_URL = 'https://vortex3d-live-uu767.trycloudflare.com';
+export const ACTIVE_TUNNEL_URL = 'https://violation-hostel-expansion-does.trycloudflare.com';
