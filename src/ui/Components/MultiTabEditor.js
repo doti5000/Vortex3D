@@ -1,11 +1,4 @@
 import * as monaco from 'monaco-editor';
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker.js?worker';
-
-self.MonacoEnvironment = {
-  getWorker(_, label) {
-    return new editorWorker();
-  }
-};
 
 export function createMultiTabEditor({ sceneManager, viewportEl }) {
   const container = document.createElement('div');
