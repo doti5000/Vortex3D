@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   return res.status(200).json({
     active: true,
     productionDomain: 'https://vortex3d.vercel.app/',
-    tunnelUrl: 'https://depends-messages-renaissance-tube.trycloudflare.com',
+    tunnelUrl: 'https://vortex3d-live-qow5u.trycloudflare.com',
     createdAt: new Date().toISOString()
   });
 }
