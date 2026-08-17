@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   return res.status(200).json({
     active: true,
     productionDomain: 'https://vortex3d.vercel.app/',
-    tunnelUrl: 'https://massage-ranges-tyler-directors.trycloudflare.com',
+    tunnelUrl: 'https://vortex3d-live-u9s0b.trycloudflare.com',
     createdAt: new Date().toISOString()
   });
 }
