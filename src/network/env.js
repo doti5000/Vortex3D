@@ -1,1 +1,1 @@
-export const ACTIVE_TUNNEL_URL = 'https://vortex3d-live-ardqe.trycloudflare.com';
+export const ACTIVE_TUNNEL_URL = 'https://enquiries-shared-geological-dictionary.trycloudflare.com';
